@@ -44,6 +44,11 @@ FIGMA_FLUTTER_MCP=your_figma_personal_access_token_here
 2. Generate a new token
 3. Copy and paste it in your `.env` file
 
+**Configure your Figma file ID:**
+- Edit `figma-config.mjs` in the project root
+- Update the `fileId` value to point to your Figma file
+- All utility scripts (`.mjs` files) will automatically use this central configuration
+
 ### 3. Build and Run
 
 ```bash
@@ -156,6 +161,10 @@ lib/ui/widgets/user_avatar/user_avatar.dart
 ```
 figma-flutter-mcp/
 ├── server.mts                 # Main MCP server entry point
+├── figma-config.mjs          # Centralized Figma file configuration
+├── extract_login_design.mjs  # Utility script for design analysis
+├── get_major_components.mjs  # Utility script for component discovery
+├── get_key_components.mjs    # Utility script for key UI components
 ├── types/
 │   └── figma.mts             # Figma API type definitions
 ├── services/
@@ -193,6 +202,24 @@ figma-flutter-mcp/
 ### Flutter Tools
 - `generate_flutter_widget` - Generate Flutter widget from specific Figma component
 - `generate_flutter_project_structure` - Generate complete Flutter project from Figma page
+
+## 🔧 Utility Scripts
+
+The project includes several utility scripts for direct Figma analysis:
+
+### Available Scripts
+```bash
+# Analyze login screen design in detail
+node extract_login_design.mjs
+
+# Discover all major components in the file
+node get_major_components.mjs
+
+# Find key UI components for quick reference
+node get_key_components.mjs
+```
+
+**Configuration:** All scripts use the centralized `figma-config.mjs` file for the Figma file ID. Update the `fileId` in that file to switch between different Figma files.
 
 ## 🎯 Smart Widget Detection
 
