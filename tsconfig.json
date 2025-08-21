@@ -16,7 +16,8 @@
   },
   "include": [
     "*.ts",
-    "*.mts"
+    "*.mts",
+    "src/server.mts"
   ],
   "exclude": [
     "node_modules",
