@@ -5,17 +5,73 @@ import {FigmaService} from "../services/figma.mjs";
 import {getFigmaToken} from "./config.mjs";
 
 export function registerFigmaTools(server: McpServer) {
-    // Tool: Theme & Design Tokens Extraction
+    // Tool: Fetch Figma File Structure
     server.registerTool(
-        "extract_design_tokens",
+        "fetch_figma_file",
         {
-            title: "Extract Design Tokens",
-            description: "Extract colors, text styles, and tokens from a Figma file for Flutter theming",
+            title: "Fetch Figma File Structure",
+            description: "Retrieve basic information about a Figma file",
             inputSchema: {
-                fileId: z.string().describe("Figma file ID")
+                fileId: z.string().describe("Figma file ID (from the URL)")
             }
         },
         async ({fileId}) => {
+            const token = getFigmaToken();
+            if (!token) {
+                return {
+                    content: [{
+                        type: "text",
+                        text: "❌ Error: Figma access token not configured. Use set_figma_token first."
+                    }]
+                };
+            }
+
+            try {
+                const figmaService = new FigmaService(token);
+                const file = await figmaService.getFile(fileId);
+
+                const fileInfo = {
+                    name: file.name,
+                    lastModified: file.lastModified,
+                    version: file.version,
+                    pageCount: file.document?.children?.length || 0,
+                    pages: file.document?.children?.map(page => ({
+                        id: page.id,
+                        name: page.name,
+                        type: page.type
+                    })) || []
+                };
+
+                return {
+                    content: [{
+                        type: "text",
+                        text: `✅ Successfully fetched Figma file!\n\n📄 File Info:\n${JSON.stringify(fileInfo, null, 2)}\n\nUse 'explore_figma_page' to explore specific pages or 'extract_design_data' to get Flutter-ready data.`
+                    }]
+                };
+            } catch (error) {
+                return {
+                    content: [{
+                        type: "text",
+                        text: `❌ Error fetching Figma file: ${error instanceof Error ? error.message : String(error)}`
+                    }]
+                };
+            }
+        }
+    );
+
+    // Tool: Extract Design Data (the main tool for Flutter generation)
+    server.registerTool(
+        "extract_design_data",
+        {
+            title: "Extract Design Data for Flutter",
+            description: "Extract colors, components, and styles from Figma with deduplication for Flutter code generation",
+            inputSchema: {
+                fileId: z.string().describe("Figma file ID"),
+                extractionType: z.enum(['colors', 'components', 'styles', 'all']).default('all').describe("What to extract"),
+                maxDepth: z.number().optional().default(3).describe("Maximum depth to traverse")
+            }
+        },
+        async ({fileId, extractionType = 'all', maxDepth = 3}) => {
             const token = getFigmaToken();
             if (!token) {
                 return {
@@ -32,7 +88,7 @@ export function registerFigmaTools(server: McpServer) {
 
                 // For now, return basic analysis until we implement the extractor
                 // This will be replaced with your extractor system
-                const analysis = analyzeFileBasic(file, 'all', 3);
+                const analysis = analyzeFileBasic(file, extractionType, maxDepth);
 
                 return {
                     content: [{
@@ -51,12 +107,65 @@ export function registerFigmaTools(server: McpServer) {
         }
     );
 
+    // Tool: Get Node Details  
+    server.registerTool(
+        "get_node_details",
+        {
+            title: "Get Node Details",
+            description: "Get detailed information about specific Figma nodes",
+            inputSchema: {
+                fileId: z.string().describe("Figma file ID"),
+                nodeIds: z.array(z.string()).describe("Array of node IDs to inspect")
+            }
+        },
+        async ({fileId, nodeIds}) => {
+            const token = getFigmaToken();
+            if (!token) {
+                return {
+                    content: [{
+                        type: "text",
+                        text: "❌ Error: Figma access token not configured."
+                    }]
+                };
+            }
+
+            try {
+                const figmaService = new FigmaService(token);
+                const nodes = await figmaService.getNodes(fileId, nodeIds);
+
+                const nodeDetails = Object.entries(nodes).map(([nodeId, node]) => ({
+                    id: nodeId,
+                    name: node.name,
+                    type: node.type,
+                    visible: node.visible !== false,
+                    bounds: node.absoluteBoundingBox,
+                    hasChildren: node.children && node.children.length > 0,
+                    childCount: node.children?.length || 0
+                }));
+
+                return {
+                    content: [{
+                        type: "text",
+                        text: `✅ Node Details:\n\n${JSON.stringify(nodeDetails, null, 2)}\n\nThese nodes can be used to generate Flutter widgets.`
+                    }]
+                };
+            } catch (error) {
+                return {
+                    content: [{
+                        type: "text",
+                        text: `❌ Error getting nodes: ${error instanceof Error ? error.message : String(error)}`
+                    }]
+                };
+            }
+        }
+    );
+
     // Tool: Export Images
     server.registerTool(
-        "typescriptexport_node_images",
+        "export_node_images",
         {
-            title: "Asset Export",
-            description: "Export node images (png/jpg/svg/pdf) for Flutter assets",
+            title: "Export Node Images",
+            description: "Get image export URLs for Figma nodes",
             inputSchema: {
                 fileId: z.string().describe("Figma file ID"),
                 nodeIds: z.array(z.string()).describe("Array of node IDs to export as images"),

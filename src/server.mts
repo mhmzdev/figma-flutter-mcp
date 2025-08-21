@@ -10,16 +10,24 @@ const server = new McpServer({
     version: "0.1.0"
 });
 
-// Parse CLI arguments for --figma-api-key and optional --stdio
+// Parse CLI arguments for figma key (supports multiple aliases) and optional --stdio
 const args = process.argv.slice(2);
 for (const arg of args) {
-    if (arg.startsWith('--figma-api-key=')) {
+    const lower = arg.toLowerCase();
+    const isKeyArg = lower.startsWith('--figma-api-key=');
+    if (isKeyArg) {
         const key = arg.split('=')[1];
         if (key && key.trim().length > 0) {
             process.env.FIGMA_FLUTTER_MCP = key;
             console.log('🔑 Figma API key loaded from CLI flag.');
         }
     }
+}
+
+// Fallback: allow FIGMA_API_KEY env if FIGMA_FLUTTER_MCP not set
+if (!process.env.FIGMA_FLUTTER_MCP && process.env.FIGMA_API_KEY) {
+    process.env.FIGMA_FLUTTER_MCP = process.env.FIGMA_API_KEY;
+    console.log('🔑 Figma API key loaded from FIGMA_API_KEY env.');
 }
 
 // Register all tools
@@ -32,11 +40,6 @@ async function main() {
     try {
         await server.connect(transport);
         console.log("🚀 Figma-to-Flutter MCP Server is running!");
-        console.log("📋 Available tools:");
-        console.log("  - extract_design_tokens: Extract design tokens for theming");
-        console.log("  - generate_flutter_widget: Generate widget code from a node ID");
-        console.log("  - generate_flutter_project_structure: Generate Flutter project structure from a page");
-        console.log("  - typescriptexport_node_images: Export node images for assets");
     } catch (error) {
         console.error("❌ Failed to start server:", error);
         process.exit(1);

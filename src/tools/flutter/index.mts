@@ -5,6 +5,7 @@ import {FigmaService} from "../../services/figma.mjs";
 import {getFigmaToken} from "../config.mjs";
 import {generateFlutterWidget} from "./widget-builder.mjs";
 import {generateProjectStructure} from "./project-structure.mjs";
+import {getDeveloperProfile} from "../profile.mjs";
 
 export function registerFlutterTools(server: McpServer) {
 
@@ -34,11 +35,22 @@ export function registerFlutterTools(server: McpServer) {
             try {
                 const figmaService = new FigmaService(token);
                 const node = await figmaService.getNode(fileId, nodeId);
+                const profile = getDeveloperProfile();
 
                 if (projectStructure) {
                     const files = generateProjectStructure([node]);
 
                     let output = `✅ Flutter widget generated for: ${node.name}\n\n`;
+                    if (profile) {
+                        output += `🧑‍💻 Using developer profile (updated ${profile.updatedAt}).\n`;
+                        if (profile.hasTheme && profile.themeNotes) {
+                            output += `🎨 Theme hints: ${profile.themeNotes}\n`;
+                        }
+                        if (profile.projectStructureDocPath) {
+                            output += `📄 Structure doc: ${profile.projectStructureDocPath}\n`;
+                        }
+                        output += `\n`;
+                    }
 
                     if (files.length === 0) {
                         output += `\`\`\`dart\n${generateFlutterWidget(node)}\n\`\`\``;
@@ -54,12 +66,19 @@ export function registerFlutterTools(server: McpServer) {
                     };
                 } else {
                     const flutterCode = generateFlutterWidget(node);
-                    return {
-                        content: [{
-                            type: "text",
-                            text: `✅ Flutter widget generated for: ${node.name}\n\n\`\`\`dart\n${flutterCode}\n\`\`\``
-                        }]
-                    };
+                    let output = `✅ Flutter widget generated for: ${node.name}\n\n`;
+                    if (profile) {
+                        output += `🧑‍💻 Using developer profile (updated ${profile.updatedAt}).\n`;
+                        if (profile.hasTheme && profile.themeNotes) {
+                            output += `🎨 Theme hints: ${profile.themeNotes}\n`;
+                        }
+                        if (profile.projectStructureDocPath) {
+                            output += `📄 Structure doc: ${profile.projectStructureDocPath}\n`;
+                        }
+                        output += `\n`;
+                    }
+                    output += `\`\`\`dart\n${flutterCode}\n\`\`\``;
+                    return { content: [{ type: "text", text: output }] };
                 }
             } catch (error) {
                 return {
