@@ -36,18 +36,60 @@ export interface FigmaNode {
 
 export interface FigmaComponent {
     key: string;
+    file_key: string;
+    node_id: string;
+    thumbnail_url: string;
     name: string;
     description: string;
-    documentationLinks?: Array<{
-        uri: string;
-    }>;
+    created_at: string;
+    updated_at: string;
+    user: {
+        id: string;
+        handle: string;
+        img_url: string;
+    };
+    containing_frame?: {
+        name: string;
+        node_id: string;
+    };
+}
+
+export interface FigmaComponentSet {
+    key: string;
+    file_key: string;
+    node_id: string;
+    thumbnail_url: string;
+    name: string;
+    description: string;
+    created_at: string;
+    updated_at: string;
+    user: {
+        id: string;
+        handle: string;
+        img_url: string;
+    };
+    containing_frame?: {
+        name: string;
+        node_id: string;
+    };
 }
 
 export interface FigmaStyle {
     key: string;
+    file_key: string;
+    node_id: string;
+    style_type: 'FILL' | 'TEXT' | 'EFFECT' | 'GRID';
+    thumbnail_url: string;
     name: string;
-    styleType: 'FILL' | 'TEXT' | 'EFFECT' | 'GRID';
     description: string;
+    created_at: string;
+    updated_at: string;
+    user: {
+        id: string;
+        handle: string;
+        img_url: string;
+    };
+    sort_position: string;
 }
 
 export interface FigmaColor {
@@ -119,4 +161,46 @@ export interface FigmaFileInfo {
     componentCount: number;
     styleCount: number;
     pageCount: number;
+}
+
+// Image Export Types
+export interface ImageExportOptions {
+    format?: 'png' | 'jpg' | 'svg' | 'pdf';
+    scale?: number; // 1, 2, 3, 4 for PNG/JPG
+    svgIncludeId?: boolean;
+    svgSimplifyStroke?: boolean;
+    svgOutlineText?: boolean;
+    useAbsoluteBounds?: boolean;
+    version?: string;
+}
+
+export interface ImageExportResponse {
+    err?: string;
+    images: {[nodeId: string]: string | null};
+}
+
+export interface ImageFillsResponse {
+    err?: string;
+    meta: {
+        images: {[imageRef: string]: string};
+    };
+}
+
+// Responses
+export interface ComponentResponse {
+    meta: {
+        components: FigmaComponent[];
+    };
+}
+
+export interface ComponentSetResponse {
+    meta: {
+        component_sets: FigmaComponentSet[];
+    };
+}
+
+export interface StylesResponse {
+    meta: {
+        styles: FigmaStyle[];
+    };
 }
