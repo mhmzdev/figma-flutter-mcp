@@ -1,4 +1,4 @@
-# Figma-to-Flutter MCP Server
+# Figma-to-Flutter MCP Server [IN PROGRESS]
 
 A comprehensive MCP (Model Context Protocol) server that bridges Figma designs and Flutter development through Cursor AI. This server automatically extracts design information from Figma files and generates organized, production-ready Flutter code with proper project structure.
 
