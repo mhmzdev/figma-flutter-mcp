@@ -7,7 +7,7 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/server.js",
-    "dev": "tsx server.mts"
+    "dev": "tsx src/server.mts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
