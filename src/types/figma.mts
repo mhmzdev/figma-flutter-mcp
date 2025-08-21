@@ -204,3 +204,21 @@ export interface StylesResponse {
         styles: FigmaStyle[];
     };
 }
+
+// Single Node Response
+export interface NodeResponse {
+    nodes: {
+        [nodeId: string]: {
+            document: FigmaNode;
+            components?: {[key: string]: FigmaComponent};
+            styles?: {[key: string]: FigmaStyle};
+        };
+    };
+}
+
+// Page Response  
+export interface PageResponse {
+    document: FigmaNode;
+    components?: {[key: string]: FigmaComponent};
+    styles?: {[key: string]: FigmaStyle};
+}

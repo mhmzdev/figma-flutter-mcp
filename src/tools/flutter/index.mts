@@ -96,7 +96,24 @@ export function registerFlutterTools(server: McpServer) {
 
             try {
                 const figmaService = new FigmaService(token);
-                const page = await figmaService.getPage(fileId, pageId);
+                
+                let actualPageId = pageId;
+                if (!actualPageId) {
+                    // Get the file to find the first page
+                    const file = await figmaService.getFile(fileId);
+                    const firstPage = file.document.children?.[0];
+                    if (!firstPage) {
+                        return {
+                            content: [{
+                                type: "text",
+                                text: "❌ Error: No pages found in the Figma file."
+                            }]
+                        };
+                    }
+                    actualPageId = firstPage.id;
+                }
+                
+                const page = await figmaService.getPage(fileId, actualPageId);
 
                 // Get top-level children (main components)
                 const topLevelNodes = page.children?.slice(0, maxComponents) || [];
