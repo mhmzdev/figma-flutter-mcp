@@ -33,10 +33,10 @@ async function main() {
         await server.connect(transport);
         console.log("🚀 Figma-to-Flutter MCP Server is running!");
         console.log("📋 Available tools:");
-        console.log("  - fetch_figma_file: Retrieve Figma file structure");
-        console.log("  - extract_design_data: Extract design data for Flutter");
-        console.log("  - get_node_details: Get detailed node information");
-        console.log("  - export_node_images: Get image export URLs for nodes");
+        console.log("  - extract_design_tokens: Extract design tokens for theming");
+        console.log("  - generate_flutter_widget: Generate widget code from a node ID");
+        console.log("  - generate_flutter_project_structure: Generate Flutter project structure from a page");
+        console.log("  - typescriptexport_node_images: Export node images for assets");
     } catch (error) {
         console.error("❌ Failed to start server:", error);
         process.exit(1);

@@ -7,7 +7,8 @@ import {generateFlutterWidget} from "./widget-builder.mjs";
 import {generateProjectStructure} from "./project-structure.mjs";
 
 export function registerFlutterTools(server: McpServer) {
-    // Tool: Generate Flutter Widget with Structure
+
+    // Tool: Generate Flutter Widget (classic name)
     server.registerTool(
         "generate_flutter_widget",
         {
@@ -96,7 +97,7 @@ export function registerFlutterTools(server: McpServer) {
 
             try {
                 const figmaService = new FigmaService(token);
-                
+
                 let actualPageId = pageId;
                 if (!actualPageId) {
                     // Get the file to find the first page
@@ -112,7 +113,7 @@ export function registerFlutterTools(server: McpServer) {
                     }
                     actualPageId = firstPage.id;
                 }
-                
+
                 const page = await figmaService.getPage(fileId, actualPageId);
 
                 // Get top-level children (main components)

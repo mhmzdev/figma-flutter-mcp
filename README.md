@@ -103,31 +103,21 @@ Replace `/path/to/your/figma-flutter-mcp` with your actual project path (use `pw
 2. **Open Cursor AI** and start a chat
 3. **Use natural language** to interact with your Figma designs
 
-### Example Commands
+### Example Commands (Recommended Usage)
 
-#### Explore Figma Files
+1) Theme & Design Tokens Extraction
 ```
-"Fetch my Figma file with ID abc123def456 and show me what's in it"
-"Explore the structure of my Figma design"
-```
-
-#### Generate Flutter Code
-```
-"Generate a complete Flutter project structure from my Figma file"
-"Generate a Flutter widget for the login screen component"
-"Create Flutter widgets for all components in my design"
+"Extract design tokens from file 83dXk35avf0BTHtYPWeyl7"
 ```
 
-### Working with Specific Components
-
-1. **First, get component IDs:**
+2) Component Generation by Node ID
 ```
-"Explore my Figma page and show me all component node IDs"
+"Build this button component 1:234 from file 83dXk35avf0BTHtYPWeyl7"
 ```
 
-2. **Generate specific widgets:**
+3) Asset Export
 ```
-"Generate Flutter widget for node ID 1:234 from my Figma file"
+"Export images for nodes 1:234,1:235 from file 83dXk35avf0BTHtYPWeyl7 as png at 2x"
 ```
 
 ## 🏗️ Generated Project Structure
@@ -194,15 +184,11 @@ figma-flutter-mcp/
 
 ## 🧰 Available MCP Tools
 
-### Figma Tools
-- `fetch_figma_file` - Retrieve Figma file information
-- `extract_design_data` - Extract design data for Flutter
-- `get_node_details` - Get detailed information about nodes
-- `export_node_images` - Get image export URLs for nodes
-
-### Flutter Tools
-- `generate_flutter_widget` - Generate Flutter widget from specific Figma component
-- `generate_flutter_project_structure` - Generate complete Flutter project from Figma page
+### Core Tools
+- `extract_design_tokens` - Extract design tokens for Flutter theming
+- `generate_flutter_widget` - Generate Flutter widget from a specific node ID
+- `generate_flutter_project_structure` - Generate complete Flutter project from a page
+- `typescriptexport_node_images` - Export node images for assets
 
 ## 🔧 Utility Scripts
 
