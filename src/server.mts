@@ -10,6 +10,26 @@ const server = new McpServer({
     version: "0.1.0"
 });
 
+// Parse CLI arguments for figma key (supports multiple aliases) and optional --stdio
+const args = process.argv.slice(2);
+for (const arg of args) {
+    const lower = arg.toLowerCase();
+    const isKeyArg = lower.startsWith('--figma-api-key=');
+    if (isKeyArg) {
+        const key = arg.split('=')[1];
+        if (key && key.trim().length > 0) {
+            process.env.FIGMA_FLUTTER_MCP = key;
+            console.log('🔑 Figma API key loaded from CLI flag.');
+        }
+    }
+}
+
+// Fallback: allow FIGMA_API_KEY env if FIGMA_FLUTTER_MCP not set
+if (!process.env.FIGMA_FLUTTER_MCP && process.env.FIGMA_API_KEY) {
+    process.env.FIGMA_FLUTTER_MCP = process.env.FIGMA_API_KEY;
+    console.log('🔑 Figma API key loaded from FIGMA_API_KEY env.');
+}
+
 // Register all tools
 registerAllTools(server);
 
@@ -20,13 +40,6 @@ async function main() {
     try {
         await server.connect(transport);
         console.log("🚀 Figma-to-Flutter MCP Server is running!");
-        console.log("📋 Available tools:");
-        console.log("  - set_figma_token: Configure Figma access token");
-        console.log("  - check_status: Check server configuration status");
-        console.log("  - test_connection: Test the MCP connection");
-        console.log("  - fetch_figma_file: Retrieve Figma file structure");
-        console.log("  - explore_figma_page: Explore specific page structure");
-        console.log("  - get_figma_node: Get detailed node information");
     } catch (error) {
         console.error("❌ Failed to start server:", error);
         process.exit(1);

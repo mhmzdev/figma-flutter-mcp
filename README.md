@@ -71,12 +71,23 @@ Add to your Cursor MCP configuration:
 **Option B: Create `.cursor-mcp/config.json`**
 ```json
 {
-  "servers": {
+  "mcpServers": {
+    "Figma Flutter MCP": {
+      "command": "npx",
+      "args": ["-y", "figma-flutter-mcp", "--figma-api-key=YOUR-KEY", "--stdio"]
+    }
+  }
+}
+```
+
+Alternatively, if running built server directly:
+
+```json
+{
+  "mcpServers": {
     "figma-flutter": {
       "command": "node",
-      "args": ["dist/server.js"],
-      "cwd": "/path/to/your/figma-flutter-mcp",
-      "description": "Figma to Flutter code generation"
+      "args": ["/path/to/your/figma-flutter-mcp/dist/server.js", "--figma-api-key=YOUR-KEY", "--stdio"],
     }
   }
 }
@@ -92,36 +103,21 @@ Replace `/path/to/your/figma-flutter-mcp` with your actual project path (use `pw
 2. **Open Cursor AI** and start a chat
 3. **Use natural language** to interact with your Figma designs
 
-### Example Commands
+### Example Commands (Recommended Usage)
 
-#### Get Started
+1) Theme & Design Tokens Extraction
 ```
-"Check my MCP server status"
-```
-
-#### Explore Figma Files
-```
-"Fetch my Figma file with ID abc123def456 and show me what's in it"
-"Explore the structure of my Figma design"
+"Extract design tokens from file 83dXk35avf0BTHtYPWeyl7"
 ```
 
-#### Generate Flutter Code
+2) Component Generation by Node ID
 ```
-"Generate a complete Flutter project structure from my Figma file"
-"Generate a Flutter widget for the login screen component"
-"Create Flutter widgets for all components in my design"
+"Build this button component 1:234 from file 83dXk35avf0BTHtYPWeyl7"
 ```
 
-### Working with Specific Components
-
-1. **First, get component IDs:**
+3) Asset Export
 ```
-"Explore my Figma page and show me all component node IDs"
-```
-
-2. **Generate specific widgets:**
-```
-"Generate Flutter widget for node ID 1:234 from my Figma file"
+"Export images for nodes 1:234,1:235 from file 83dXk35avf0BTHtYPWeyl7 as png at 2x"
 ```
 
 ## 🏗️ Generated Project Structure
@@ -188,20 +184,11 @@ figma-flutter-mcp/
 
 ## 🧰 Available MCP Tools
 
-### Configuration Tools
-- `check_status` - Check server configuration and health
-- `set_figma_token` - Manually override Figma token (optional)
-- `reload_env_token` - Reload token from .env file
-- `test_connection` - Test MCP server connection
-
-### Figma Tools
-- `fetch_figma_file` - Retrieve Figma file information
-- `explore_figma_page` - Explore page structure and get node IDs
-- `get_figma_node` - Get detailed information about specific components
-
-### Flutter Tools
-- `generate_flutter_widget` - Generate Flutter widget from specific Figma component
-- `generate_flutter_project_structure` - Generate complete Flutter project from Figma page
+### Core Tools
+- `extract_design_tokens` - Extract design tokens for Flutter theming
+- `generate_flutter_widget` - Generate Flutter widget from a specific node ID
+- `generate_flutter_project_structure` - Generate complete Flutter project from a page
+- `typescriptexport_node_images` - Export node images for assets
 
 ## 🔧 Utility Scripts
 
@@ -259,7 +246,7 @@ Components not matching screen or global widget patterns are treated as screen-s
 3. Verify Cursor MCP configuration path is correct
 
 ### Figma API Errors
-1. Verify your Figma token is valid
+1. Verify your Figma token is provided via `--figma-api-key` or `FIGMA_FLUTTER_MCP`
 2. Ensure the Figma file ID is correct
 3. Check if you have access to the Figma file
 
