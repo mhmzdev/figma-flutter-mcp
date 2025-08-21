@@ -71,12 +71,23 @@ Add to your Cursor MCP configuration:
 **Option B: Create `.cursor-mcp/config.json`**
 ```json
 {
-  "servers": {
+  "mcpServers": {
+    "Figma Flutter MCP": {
+      "command": "npx",
+      "args": ["-y", "figma-flutter-mcp", "--figma-api-key=YOUR-KEY", "--stdio"]
+    }
+  }
+}
+```
+
+Alternatively, if running built server directly:
+
+```json
+{
+  "mcpServers": {
     "figma-flutter": {
       "command": "node",
-      "args": ["dist/server.js"],
-      "cwd": "/path/to/your/figma-flutter-mcp",
-      "description": "Figma to Flutter code generation"
+      "args": ["/path/to/your/figma-flutter-mcp/dist/server.js", "--figma-api-key=YOUR-KEY", "--stdio"],
     }
   }
 }
@@ -93,11 +104,6 @@ Replace `/path/to/your/figma-flutter-mcp` with your actual project path (use `pw
 3. **Use natural language** to interact with your Figma designs
 
 ### Example Commands
-
-#### Get Started
-```
-"Check my MCP server status"
-```
 
 #### Explore Figma Files
 ```
@@ -188,16 +194,11 @@ figma-flutter-mcp/
 
 ## 🧰 Available MCP Tools
 
-### Configuration Tools
-- `check_status` - Check server configuration and health
-- `set_figma_token` - Manually override Figma token (optional)
-- `reload_env_token` - Reload token from .env file
-- `test_connection` - Test MCP server connection
-
 ### Figma Tools
 - `fetch_figma_file` - Retrieve Figma file information
-- `explore_figma_page` - Explore page structure and get node IDs
-- `get_figma_node` - Get detailed information about specific components
+- `extract_design_data` - Extract design data for Flutter
+- `get_node_details` - Get detailed information about nodes
+- `export_node_images` - Get image export URLs for nodes
 
 ### Flutter Tools
 - `generate_flutter_widget` - Generate Flutter widget from specific Figma component
@@ -259,7 +260,7 @@ Components not matching screen or global widget patterns are treated as screen-s
 3. Verify Cursor MCP configuration path is correct
 
 ### Figma API Errors
-1. Verify your Figma token is valid
+1. Verify your Figma token is provided via `--figma-api-key` or `FIGMA_FLUTTER_MCP`
 2. Ensure the Figma file ID is correct
 3. Check if you have access to the Figma file
 

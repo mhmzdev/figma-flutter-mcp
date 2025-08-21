@@ -4,7 +4,7 @@
     "module": "ESNext",
     "moduleResolution": "node",
     "outDir": "./dist",
-    "rootDir": "./",
+    "rootDir": "./src",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -15,9 +15,7 @@
     "allowSyntheticDefaultImports": true
   },
   "include": [
-    "*.ts",
-    "*.mts",
-    "src/server.mts"
+    "src/**/*"
   ],
   "exclude": [
     "node_modules",

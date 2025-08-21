@@ -21,7 +21,7 @@ export function registerFigmaTools(server: McpServer) {
                 return {
                     content: [{
                         type: "text",
-                        text: "❌ Error: Figma access token not configured. Use set_figma_token first."
+                        text: "❌ Error: Figma access token not configured. Provide --figma-api-key=YOUR_KEY on startup or set FIGMA_FLUTTER_MCP in your environment (.env)."
                     }]
                 };
             }
@@ -45,7 +45,7 @@ export function registerFigmaTools(server: McpServer) {
                 return {
                     content: [{
                         type: "text",
-                        text: `✅ Successfully fetched Figma file!\n\n📄 File Info:\n${JSON.stringify(fileInfo, null, 2)}\n\nUse 'explore_figma_page' to explore specific pages or 'extract_design_data' to get Flutter-ready data.`
+                        text: `✅ Successfully fetched Figma file!\n\n📄 File Info:\n${JSON.stringify(fileInfo, null, 2)}\n\nUse 'get_node_details' to inspect specific nodes or 'extract_design_data' to prepare Flutter-ready data.`
                     }]
                 };
             } catch (error) {
