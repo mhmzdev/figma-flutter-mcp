@@ -83,24 +83,39 @@ flutter:
 `;
     }
 
-    // Parse and update assets section
-    const assetPaths = [...new Set(assets.map(a => `    - ${a.path}`))];
+    // Extract existing assets from pubspec
+    const existingAssets = new Set<string>();
+    const assetMatch = pubspecContent.match(/assets:\s*\n((?:    - .*\n)*)/);
+    if (assetMatch) {
+        const existingAssetLines = assetMatch[1].match(/    - .*/g) || [];
+        existingAssetLines.forEach(line => {
+            const assetPath = line.replace(/^\s*-\s*/, '').trim();
+            existingAssets.add(assetPath);
+        });
+    }
+
+    // Add new assets to existing ones
+    const newAssetPaths = assets.map(a => a.path);
+    newAssetPaths.forEach(path => existingAssets.add(path));
+
+    // Convert back to formatted lines
+    const allAssetPaths = Array.from(existingAssets).sort().map(path => `    - ${path}`);
 
     if (pubspecContent.includes('assets:')) {
-        // Replace existing assets section
+        // Replace existing assets section with merged assets
         pubspecContent = pubspecContent.replace(
             /assets:\s*\n(?:    - .*\n)*/,
-            `assets:\n${assetPaths.join('\n')}\n`
+            `assets:\n${allAssetPaths.join('\n')}\n`
         );
     } else if (pubspecContent.includes('flutter:')) {
         // Add assets to existing flutter section
         pubspecContent = pubspecContent.replace(
             'flutter:',
-            `flutter:\n  assets:\n${assetPaths.join('\n')}`
+            `flutter:\n  assets:\n${allAssetPaths.join('\n')}`
         );
     } else {
         // Add flutter section with assets
-        pubspecContent += `\nflutter:\n  assets:\n${assetPaths.join('\n')}\n`;
+        pubspecContent += `\nflutter:\n  assets:\n${allAssetPaths.join('\n')}\n`;
     }
 
     await writeFile(pubspecPath, pubspecContent);
@@ -112,7 +127,20 @@ export async function generateAssetConstants(assets: Array<{filename: string, no
 
     const constantsPath = join(constantsDir, 'assets.dart');
 
-    // Generate unique asset names
+    // Read existing constants if they exist
+    const existingConstants = new Map<string, string>();
+    try {
+        const existingContent = await readFile(constantsPath, 'utf-8');
+        // Extract existing constants using regex
+        const constantMatches = existingContent.matchAll(/static const String (\w+) = '([^']+)';/g);
+        for (const match of constantMatches) {
+            existingConstants.set(match[1], match[2]);
+        }
+    } catch {
+        // File doesn't exist, that's fine
+    }
+
+    // Generate unique asset names from new assets
     const uniqueAssets = assets.reduce((acc, asset) => {
         const baseName = asset.filename.replace(/@\d+x/, '').replace(/\.[^.]+$/, '');
         if (!acc[baseName]) {
@@ -121,11 +149,19 @@ export async function generateAssetConstants(assets: Array<{filename: string, no
         return acc;
     }, {} as Record<string, any>);
 
-    let constantsContent = `// Generated asset constants\n// Do not edit manually\n\nclass Assets {\n`;
-
+    // Add new constants to existing ones
     Object.entries(uniqueAssets).forEach(([baseName, asset]) => {
         const constantName = toCamelCase(asset.nodeName);
         const assetPath = `assets/images/${baseName}.png`; // Use base resolution
+        existingConstants.set(constantName, assetPath);
+    });
+
+    // Generate the complete constants file
+    let constantsContent = `// Generated asset constants\n// Do not edit manually\n\nclass Assets {\n`;
+
+    // Sort constants alphabetically for consistency
+    const sortedConstants = Array.from(existingConstants.entries()).sort(([a], [b]) => a.localeCompare(b));
+    sortedConstants.forEach(([constantName, assetPath]) => {
         constantsContent += `  static const String ${constantName} = '${assetPath}';\n`;
     });
 

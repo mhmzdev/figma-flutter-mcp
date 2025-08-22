@@ -115,17 +115,12 @@ export function registerFlutterAssetTools(server: McpServer) {
                 });
 
                 output += `\nPubspec Configuration:\n`;
-                output += `- Updated pubspec.yaml with asset declarations\n`;
+                output += `- Merged asset declarations into pubspec.yaml\n`;
                 output += `- Assets available under: assets/images/\n\n`;
 
                 output += `Generated Code:\n`;
-                output += `- Asset constants file: ${constantsFile}\n`;
-                output += `- Import in your Flutter code: import 'package:your_app/constants/assets.dart';\n\n`;
-
-                output += `Usage Example:\n`;
-                output += "```dart\n";
-                output += `Image.asset(Assets.${toCamelCase(imageNodes[0].name)})\n`;
-                output += "```";
+                output += `- Merged asset constants into: ${constantsFile}\n`;
+                output += `- Import in your Flutter code: import 'package:your_app/constants/assets.dart';\n`;
 
                 return {
                     content: [{type: "text", text: output}]
