@@ -6,8 +6,11 @@ import {getFigmaToken} from "../config.mjs";
 import {generateFlutterWidget} from "./widget-builder.mjs";
 import {generateProjectStructure} from "./project-structure.mjs";
 import {getDeveloperProfile} from "../profile.mjs";
+import {registerFlutterAssetTools} from "./assets.mjs";
 
 export function registerFlutterTools(server: McpServer) {
+    // Register Flutter asset management tools
+    registerFlutterAssetTools(server);
 
     // Tool: Generate Flutter Widget (classic name)
     // server.registerTool(
