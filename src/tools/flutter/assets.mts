@@ -31,7 +31,7 @@ export function registerFlutterAssetTools(server: McpServer) {
                 includeMultipleResolutions: z.boolean().optional().default(false).describe("Generate @2x, @3x variants for different screen densities")
             }
         },
-        async ({fileId, nodeIds, projectPath = process.cwd(), format = 'png', scale = 2, includeMultipleResolutions = true}) => {
+        async ({fileId, nodeIds, projectPath = process.cwd(), format = 'png', scale = 2, includeMultipleResolutions = false}) => {
             const token = getFigmaToken();
             if (!token) {
                 return {

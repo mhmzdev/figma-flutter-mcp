@@ -16,6 +16,12 @@ export async function createAssetsDirectory(projectPath: string): Promise<string
     return assetsDir;
 }
 
+export async function createSvgAssetsDirectory(projectPath: string): Promise<string> {
+    const assetsDir = join(projectPath, 'assets', 'svgs');
+    await mkdir(assetsDir, {recursive: true});
+    return assetsDir;
+}
+
 export function generateAssetFilename(nodeName: string, format: string, scale: number, multiRes: boolean): string {
     // Clean the node name for filename
     const cleanName = nodeName
@@ -29,6 +35,17 @@ export function generateAssetFilename(nodeName: string, format: string, scale: n
     }
 
     return `${cleanName}.${format}`;
+}
+
+export function generateSvgFilename(nodeName: string): string {
+    // Clean the node name for SVG filename
+    const cleanName = nodeName
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '_')
+        .replace(/_+/g, '_')
+        .replace(/^_|_$/g, '');
+
+    return `${cleanName}.svg`;
 }
 
 export async function downloadImage(url: string, filepath: string): Promise<void> {
@@ -158,6 +175,56 @@ export async function generateAssetConstants(assets: Array<{filename: string, no
 
     // Generate the complete constants file
     let constantsContent = `// Generated asset constants\n// Do not edit manually\n\nclass Assets {\n`;
+
+    // Sort constants alphabetically for consistency
+    const sortedConstants = Array.from(existingConstants.entries()).sort(([a], [b]) => a.localeCompare(b));
+    sortedConstants.forEach(([constantName, assetPath]) => {
+        constantsContent += `  static const String ${constantName} = '${assetPath}';\n`;
+    });
+
+    constantsContent += `}\n`;
+
+    await writeFile(constantsPath, constantsContent);
+    return constantsPath;
+}
+
+export async function generateSvgAssetConstants(assets: Array<{filename: string, nodeName: string}>, projectPath: string): Promise<string> {
+    const constantsDir = join(projectPath, 'lib', 'constants');
+    await mkdir(constantsDir, {recursive: true});
+
+    const constantsPath = join(constantsDir, 'svg_assets.dart');
+
+    // Read existing SVG constants if they exist
+    const existingConstants = new Map<string, string>();
+    try {
+        const existingContent = await readFile(constantsPath, 'utf-8');
+        // Extract existing constants using regex
+        const constantMatches = existingContent.matchAll(/static const String (\w+) = '([^']+)';/g);
+        for (const match of constantMatches) {
+            existingConstants.set(match[1], match[2]);
+        }
+    } catch {
+        // File doesn't exist, that's fine
+    }
+
+    // Generate unique SVG asset names from new assets
+    const uniqueAssets = assets.reduce((acc, asset) => {
+        const baseName = asset.filename.replace(/\.svg$/, '');
+        if (!acc[baseName]) {
+            acc[baseName] = asset;
+        }
+        return acc;
+    }, {} as Record<string, any>);
+
+    // Add new constants to existing ones
+    Object.entries(uniqueAssets).forEach(([baseName, asset]) => {
+        const constantName = toCamelCase(asset.nodeName);
+        const assetPath = `assets/svgs/${baseName}.svg`;
+        existingConstants.set(constantName, assetPath);
+    });
+
+    // Generate the complete SVG constants file
+    let constantsContent = `// Generated SVG asset constants\n// Do not edit manually\n\nclass SvgAssets {\n`;
 
     // Sort constants alphabetically for consistency
     const sortedConstants = Array.from(existingConstants.entries()).sort(([a], [b]) => a.localeCompare(b));

@@ -7,10 +7,14 @@ import {generateFlutterWidget} from "./widget-builder.mjs";
 import {generateProjectStructure} from "./project-structure.mjs";
 import {getDeveloperProfile} from "../profile.mjs";
 import {registerFlutterAssetTools} from "./assets.mjs";
+import {registerSvgAssetTools} from "./svg-assets.mjs";
 
 export function registerFlutterTools(server: McpServer) {
     // Register Flutter asset management tools
     registerFlutterAssetTools(server);
+    
+    // Register SVG asset management tools
+    registerSvgAssetTools(server);
 
     // Tool: Generate Flutter Widget (classic name)
     // server.registerTool(
@@ -194,3 +198,4 @@ export function registerFlutterTools(server: McpServer) {
     //     }
     // );
 }
+
