@@ -57,3 +57,12 @@ export interface ColorExtractionOptions {
     includeTransparent?: boolean;
     minUsageCount?: number;
 }
+
+/**
+ * Flutter theme generation options
+ */
+export interface ThemeGenerationOptions {
+    generateThemeData?: boolean;
+    includeColorScheme?: boolean;
+    includeMaterialColors?: boolean;
+}

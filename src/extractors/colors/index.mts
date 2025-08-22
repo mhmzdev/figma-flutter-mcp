@@ -18,5 +18,6 @@ export type {
     ColorExtractionContext,
     ColorExtractorFn,
     ColorExtractionResult,
-    ColorExtractionOptions
+    ColorExtractionOptions,
+    ThemeGenerationOptions
 } from './types.mjs';
