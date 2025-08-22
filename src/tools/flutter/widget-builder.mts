@@ -1,5 +1,6 @@
 // tools/flutter/widget-builder.mts
 import type {FigmaNode} from "../../types/figma.mjs";
+import type {DeveloperProfile} from "../profile.mjs";
 import {analyzeNodeStructure, toPascalCase} from "./utils.mjs";
 import {
     generateContainerWidget,
@@ -9,7 +10,27 @@ import {
     generateComponentWidget
 } from "./generators.mjs";
 
-export function generateFlutterWidget(node: FigmaNode, isPrivate: boolean = false): string {
+// Backward-compatible signature:
+// - generateFlutterWidget(node, true)
+// - generateFlutterWidget(node, extractedData, profile, true)
+export function generateFlutterWidget(
+    node: FigmaNode,
+    arg2?: boolean | any,
+    arg3?: DeveloperProfile | any,
+    arg4?: boolean
+): string {
+    let extractedData: any | undefined;
+    let profile: DeveloperProfile | undefined;
+    let isPrivate = false;
+
+    if (typeof arg2 === 'boolean') {
+        isPrivate = arg2;
+    } else {
+        extractedData = arg2;
+        profile = arg3 as DeveloperProfile | undefined;
+        isPrivate = Boolean(arg4);
+    }
+
     const structure = analyzeNodeStructure(node);
     const className = isPrivate ? `_${toPascalCase(node.name)}` : toPascalCase(node.name);
 
@@ -39,7 +60,11 @@ export function generateFlutterWidget(node: FigmaNode, isPrivate: boolean = fals
 
     const imports = isPrivate ? [] : ["import 'package:flutter/material.dart';"];
 
-    return `${imports.join('\n')}${imports.length > 0 ? '\n\n' : ''}class ${className} extends StatelessWidget {
+    const header = profile && profile.hasTheme && profile.themeNotes
+        ? `// Using project theme hints: ${profile.themeNotes}\n`
+        : '';
+
+    return `${imports.join('\n')}${imports.length > 0 ? '\n\n' : ''}${header}class ${className} extends StatelessWidget {
   const ${className}({Key? key}) : super(key: key);
 
   @override
