@@ -2,9 +2,9 @@
 
 import {z} from "zod";
 import type {McpServer} from "@modelcontextprotocol/sdk/server/mcp.js";
-import {FigmaService} from "../../services/figma.mjs";
-import {getFigmaToken} from "../config.mjs";
-import {extractThemeTypography} from "../../extractors/typography/index.mjs";
+import {FigmaService} from "../../../../services/figma.mjs";
+import {getFigmaToken} from "../../../config.mjs";
+import {extractThemeTypography} from "../../../../extractors/typography/index.mjs";
 import {TypographyGenerator} from "./typography-generator.mjs";
 import {join} from 'path';
 

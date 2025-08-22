@@ -1,8 +1,8 @@
 // tools/flutter/svg-assets.mts
 import {z} from "zod";
 import type {McpServer} from "@modelcontextprotocol/sdk/server/mcp.js";
-import {FigmaService} from "../../services/figma.mjs";
-import {getFigmaToken} from "../config.mjs";
+import {FigmaService} from "../../../services/figma.mjs";
+import {getFigmaToken} from "../../config.mjs";
 import {join} from 'path';
 import {
     createSvgAssetsDirectory,
