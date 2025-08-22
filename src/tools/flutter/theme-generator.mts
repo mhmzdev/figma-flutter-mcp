@@ -1,7 +1,7 @@
 // src/tools/flutter/simple-theme-generator.mts
 import {writeFile, mkdir} from 'fs/promises';
 import {join} from 'path';
-import type {ThemeColor} from '../../extractors/theme.mjs';
+import type {ThemeColor} from '../../extractors/colors/index.mjs';
 
 export class SimpleThemeGenerator {
     /**
@@ -20,11 +20,8 @@ export class SimpleThemeGenerator {
     }
 
     private generateDartContent(colors: ThemeColor[]): string {
-        const timestamp = new Date().toISOString().split('T')[0];
 
         let content = `// Generated AppColors from Figma theme frame
-// Generated on: ${timestamp}
-// Total colors: ${colors.length}
 
 import 'package:flutter/material.dart';
 
@@ -40,42 +37,8 @@ class AppColors {
 `;
         });
 
-        // Add convenience getters for common colors
-        content += this.generateConvenienceGetters(colors);
-
         content += `}\n`;
         return content;
-    }
-
-    private generateConvenienceGetters(colors: ThemeColor[]): string {
-        let getters = `  // Convenience getters for common theme colors
-`;
-
-        const commonMappings = [
-            {getter: 'primary', patterns: ['primary']},
-            {getter: 'secondary', patterns: ['secondary']},
-            {getter: 'background', patterns: ['background', 'surface']},
-            {getter: 'onBackground', patterns: ['backgroundlight', 'onbackground']},
-            {getter: 'error', patterns: ['danger', 'error']},
-            {getter: 'success', patterns: ['success']},
-            {getter: 'warning', patterns: ['warning']}
-        ];
-
-        commonMappings.forEach(mapping => {
-            const matchingColor = colors.find(color =>
-                mapping.patterns.some(pattern =>
-                    color.name.toLowerCase().includes(pattern.toLowerCase())
-                )
-            );
-
-            if (matchingColor) {
-                const constantName = this.toDartConstantName(matchingColor.name);
-                getters += `  static Color get ${mapping.getter} => ${constantName};
-`;
-            }
-        });
-
-        return getters + '\n';
     }
 
     private toDartConstantName(name: string): string {

@@ -3,7 +3,7 @@ import {z} from "zod";
 import type {McpServer} from "@modelcontextprotocol/sdk/server/mcp.js";
 import {FigmaService} from "../../services/figma.mjs";
 import {getFigmaToken} from "../config.mjs";
-import {ThemeFrameExtractor} from "../../extractors/theme.mjs";
+import {extractThemeColors} from "../../extractors/colors/index.mjs";
 import {SimpleThemeGenerator} from "./theme-generator.mjs";
 import {join} from 'path';
 
@@ -33,7 +33,6 @@ export function registerThemeTools(server: McpServer) {
             try {
                 // Initialize services
                 const figmaService = new FigmaService(token);
-                const extractor = new ThemeFrameExtractor();
                 const generator = new SimpleThemeGenerator();
 
                 // Get the specific theme frame node
@@ -49,7 +48,7 @@ export function registerThemeTools(server: McpServer) {
                 }
 
                 // Extract colors from the theme frame
-                const themeColors = extractor.extractColorsFromThemeFrame(themeFrame);
+                const themeColors = extractThemeColors(themeFrame);
 
                 if (themeColors.length === 0) {
                     return {

@@ -113,6 +113,7 @@ export interface FigmaStroke {
     type: string;
     color: FigmaColor;
     strokeWeight?: number;
+    visible?: boolean;
 }
 
 export interface FigmaEffect {
