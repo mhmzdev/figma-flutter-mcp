@@ -3,7 +3,7 @@ import {z} from "zod";
 import type {McpServer} from "@modelcontextprotocol/sdk/server/mcp.js";
 import {FigmaService} from "../../services/figma.mjs";
 import {getFigmaToken} from "../config.mjs";
-import {ThemeFrameExtractor} from "../../extractors/theme.mjs";
+import {extractThemeColors} from "../../extractors/colors/index.mjs";
 import {SimpleThemeGenerator} from "./theme-generator.mjs";
 import {join} from 'path';
 
@@ -16,10 +16,11 @@ export function registerThemeTools(server: McpServer) {
             inputSchema: {
                 fileId: z.string().describe("Figma file ID"),
                 nodeId: z.string().describe("Theme frame node ID containing color swatches"),
-                projectPath: z.string().optional().describe("Path to Flutter project (defaults to current directory)")
+                projectPath: z.string().optional().describe("Path to Flutter project (defaults to current directory)"),
+                generateThemeData: z.boolean().optional().describe("Generate Flutter ThemeData class (defaults to false)")
             }
         },
-        async ({fileId, nodeId, projectPath = process.cwd()}) => {
+        async ({fileId, nodeId, projectPath = process.cwd(), generateThemeData = false}) => {
             const token = getFigmaToken();
             if (!token) {
                 return {
@@ -33,7 +34,6 @@ export function registerThemeTools(server: McpServer) {
             try {
                 // Initialize services
                 const figmaService = new FigmaService(token);
-                const extractor = new ThemeFrameExtractor();
                 const generator = new SimpleThemeGenerator();
 
                 // Get the specific theme frame node
@@ -49,7 +49,7 @@ export function registerThemeTools(server: McpServer) {
                 }
 
                 // Extract colors from the theme frame
-                const themeColors = extractor.extractColorsFromThemeFrame(themeFrame);
+                const themeColors = extractThemeColors(themeFrame);
 
                 if (themeColors.length === 0) {
                     return {
@@ -62,25 +62,46 @@ export function registerThemeTools(server: McpServer) {
 
                 // Generate AppColors class
                 const outputPath = join(projectPath, 'lib', 'theme');
-                const generatedFilePath = await generator.generateAppColors(themeColors, outputPath);
+                const generatedFilePath = await generator.generateAppColors(themeColors, outputPath, {
+                    generateThemeData,
+                    includeColorScheme: true,
+                    includeMaterialColors: true
+                });
 
                 // Create success report
                 let output = `Successfully extracted theme colors!\n\n`;
                 output += `Theme Frame: ${themeFrame.name}\n`;
                 output += `Node ID: ${nodeId}\n`;
                 output += `Colors found: ${themeColors.length}\n`;
-                output += `Generated: ${generatedFilePath}\n\n`;
+                output += `Generated: ${generatedFilePath}\n`;
+                if (generateThemeData) {
+                    output += `Theme Data: ${join(outputPath, 'app_theme.dart')}\n`;
+                }
+                output += `\n`;
 
                 output += `Extracted Colors:\n`;
                 themeColors.forEach((color, index) => {
                     output += `${index + 1}. ${color.name}: ${color.hex}\n`;
                 });
 
-                output += `\nGenerated Flutter Code:\n`;
-                output += `import 'package:your_app/theme/app_colors.dart';\n\n`;
-                output += `Usage Examples:\n`;
+                output += `\nGenerated Files:\n`;
+                output += `• app_colors.dart - Color constants\n`;
+                if (generateThemeData) {
+                    output += `• app_theme.dart - Flutter ThemeData\n`;
+                }
+
+                output += `\nUsage Examples:\n`;
+                output += `// Colors:\n`;
                 output += `Container(color: AppColors.primary)\n`;
                 output += `Text('Hello', style: TextStyle(color: AppColors.backgroundDark))\n`;
+                
+                if (generateThemeData) {
+                    output += `\n// Theme:\n`;
+                    output += `MaterialApp(\n`;
+                    output += `  theme: AppTheme.lightTheme,\n`;
+                    output += `  // ... your app\n`;
+                    output += `)\n`;
+                }
 
                 return {
                     content: [{type: "text", text: output}]

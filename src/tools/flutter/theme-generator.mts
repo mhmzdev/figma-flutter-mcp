@@ -1,13 +1,13 @@
 // src/tools/flutter/simple-theme-generator.mts
 import {writeFile, mkdir} from 'fs/promises';
 import {join} from 'path';
-import type {ThemeColor} from '../../extractors/theme.mjs';
+import type {ThemeColor, ThemeGenerationOptions} from '../../extractors/colors/index.mjs';
 
 export class SimpleThemeGenerator {
     /**
      * Generate AppColors Dart class from theme colors
      */
-    async generateAppColors(colors: ThemeColor[], outputPath: string): Promise<string> {
+    async generateAppColors(colors: ThemeColor[], outputPath: string, options: ThemeGenerationOptions = {}): Promise<string> {
         // Create output directory
         await mkdir(outputPath, {recursive: true});
         const filePath = join(outputPath, 'app_colors.dart');
@@ -16,15 +16,29 @@ export class SimpleThemeGenerator {
         const content = this.generateDartContent(colors);
 
         await writeFile(filePath, content);
+
+        // Generate ThemeData if requested
+        if (options.generateThemeData) {
+            await this.generateThemeData(colors, outputPath, options);
+        }
+
+        return filePath;
+    }
+
+    /**
+     * Generate Flutter ThemeData from theme colors
+     */
+    async generateThemeData(colors: ThemeColor[], outputPath: string, options: ThemeGenerationOptions = {}): Promise<string> {
+        const filePath = join(outputPath, 'app_theme.dart');
+        const content = this.generateThemeDataContent(colors, options);
+
+        await writeFile(filePath, content);
         return filePath;
     }
 
     private generateDartContent(colors: ThemeColor[]): string {
-        const timestamp = new Date().toISOString().split('T')[0];
 
         let content = `// Generated AppColors from Figma theme frame
-// Generated on: ${timestamp}
-// Total colors: ${colors.length}
 
 import 'package:flutter/material.dart';
 
@@ -40,42 +54,68 @@ class AppColors {
 `;
         });
 
-        // Add convenience getters for common colors
-        content += this.generateConvenienceGetters(colors);
-
         content += `}\n`;
         return content;
     }
 
-    private generateConvenienceGetters(colors: ThemeColor[]): string {
-        let getters = `  // Convenience getters for common theme colors
+    private generateThemeDataContent(colors: ThemeColor[], options: ThemeGenerationOptions): string {
+        const timestamp = new Date().toISOString().split('T')[0];
+        const colorMap = this.createColorMap(colors);
+
+        let content = `// Generated Flutter ThemeData from Figma theme frame
+
+import 'package:flutter/material.dart';
+import 'app_colors.dart';
+
+class AppTheme {
+  // Light Theme
+  static ThemeData get lightTheme {
+    return ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.light,
 `;
 
-        const commonMappings = [
-            {getter: 'primary', patterns: ['primary']},
-            {getter: 'secondary', patterns: ['secondary']},
-            {getter: 'background', patterns: ['background', 'surface']},
-            {getter: 'onBackground', patterns: ['backgroundlight', 'onbackground']},
-            {getter: 'error', patterns: ['danger', 'error']},
-            {getter: 'success', patterns: ['success']},
-            {getter: 'warning', patterns: ['warning']}
-        ];
+        // Add ColorScheme if requested
+        if (options.includeColorScheme !== false) {
+            content += this.generateColorScheme(colorMap);
+        }
 
-        commonMappings.forEach(mapping => {
-            const matchingColor = colors.find(color =>
-                mapping.patterns.some(pattern =>
-                    color.name.toLowerCase().includes(pattern.toLowerCase())
-                )
-            );
-
-            if (matchingColor) {
-                const constantName = this.toDartConstantName(matchingColor.name);
-                getters += `  static Color get ${mapping.getter} => ${constantName};
+        content += `    );
+  }
+}
 `;
-            }
+
+        return content;
+    }
+
+    private createColorMap(colors: ThemeColor[]): Map<string, string> {
+        const colorMap = new Map<string, string>();
+
+        colors.forEach(color => {
+            const key = color.name.toLowerCase().replace(/\s+/g, '');
+            colorMap.set(key, `AppColors.${this.toDartConstantName(color.name)}`);
         });
 
-        return getters + '\n';
+        return colorMap;
+    }
+
+    private generateColorScheme(colorMap: Map<string, string>): string {
+        const primary = colorMap.get('primary') || 'AppColors.primary';
+        const secondary = colorMap.get('secondary') || colorMap.get('accent') || 'Colors.blue.shade300';
+        const background = colorMap.get('background') || colorMap.get('backgroundlight') || 'Colors.white';
+        const surface = colorMap.get('surface') || background;
+        const error = colorMap.get('error') || colorMap.get('danger') || 'Colors.red';
+
+        return `      colorScheme: ColorScheme.fromSeed(
+        seedColor: ${primary},
+        brightness: Brightness.light,
+        primary: ${primary},
+        secondary: ${secondary},
+        background: ${background},
+        surface: ${surface},
+        error: ${error},
+      ),
+`;
     }
 
     private toDartConstantName(name: string): string {
