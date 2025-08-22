@@ -6,8 +6,8 @@ import {getFigmaToken} from "../config.mjs";
 import {generateFlutterWidget} from "./widget-builder.mjs";
 import {generateProjectStructure} from "./project-structure.mjs";
 import {getDeveloperProfile} from "../profile.mjs";
-import {registerFlutterAssetTools} from "./assets.mjs";
-import {registerSvgAssetTools} from "./svg-assets.mjs";
+import {registerFlutterAssetTools} from "./assets/assets.mjs";
+import {registerSvgAssetTools} from "./assets/svg-assets.mjs";
 
 export function registerFlutterTools(server: McpServer) {
     // Register Flutter asset management tools

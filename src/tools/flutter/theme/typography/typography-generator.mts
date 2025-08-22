@@ -6,7 +6,7 @@ import type {
     TypographyStyle,
     TypographyDefinition,
     TypographyGenerationOptions
-} from '../../extractors/typography/types.mjs';
+} from '../../../../extractors/typography/types.mjs';
 
 /**
  * Flutter typography generator for AppText classes

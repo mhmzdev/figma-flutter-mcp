@@ -1,9 +1,9 @@
 // src/tools/flutter/simple-theme-tool.mts
 import {z} from "zod";
 import type {McpServer} from "@modelcontextprotocol/sdk/server/mcp.js";
-import {FigmaService} from "../../services/figma.mjs";
-import {getFigmaToken} from "../config.mjs";
-import {extractThemeColors} from "../../extractors/colors/index.mjs";
+import {FigmaService} from "../../../../services/figma.mjs";
+import {getFigmaToken} from "../../../config.mjs";
+import {extractThemeColors} from "../../../../extractors/colors/index.mjs";
 import {SimpleThemeGenerator} from "./theme-generator.mjs";
 import {join} from 'path';
 

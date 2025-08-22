@@ -2,8 +2,8 @@
 import type {McpServer} from "@modelcontextprotocol/sdk/server/mcp.js";
 import {registerFigmaTools} from "./figma.mjs";
 import {registerFlutterTools} from "./flutter/index.mjs";
-import {registerThemeTools} from "./flutter/theme-tool.mjs";
-import {registerTypographyTools} from "./flutter/typography-tool.mjs";
+import {registerThemeTools} from "./flutter/theme/colors/theme-tool.mjs";
+import {registerTypographyTools} from "./flutter/theme/typography/typography-tool.mjs";
 
 export function registerAllTools(server: McpServer) {
     // Register all tool categories

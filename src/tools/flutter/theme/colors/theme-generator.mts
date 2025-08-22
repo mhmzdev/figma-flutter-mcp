@@ -1,7 +1,7 @@
 // src/tools/flutter/simple-theme-generator.mts
 import {writeFile, mkdir} from 'fs/promises';
 import {join} from 'path';
-import type {ThemeColor, ThemeGenerationOptions} from '../../extractors/colors/index.mjs';
+import type {ThemeColor, ThemeGenerationOptions} from '../../../../extractors/colors/index.mjs';
 
 export class SimpleThemeGenerator {
     /**
