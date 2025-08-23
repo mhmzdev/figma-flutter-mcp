@@ -5,17 +5,17 @@ import {registerSvgAssetTools} from "./assets/svg-assets.mjs";
 import {registerComponentTools} from "./components/component-tool.mjs";
 import {registerScreenTools} from "./screens/screen-tool.mjs";
 
-export function registerFlutterTools(server: McpServer) {
+export function registerFlutterTools(server: McpServer, figmaApiKey: string) {
     // Register Flutter asset management tools
-    registerFlutterAssetTools(server);
+    registerFlutterAssetTools(server, figmaApiKey);
 
     // Register SVG asset management tools
-    registerSvgAssetTools(server);
+    registerSvgAssetTools(server, figmaApiKey);
 
     // Register component analysis tools
-    registerComponentTools(server);
+    registerComponentTools(server, figmaApiKey);
 
     // Register screen analysis tools
-    registerScreenTools(server);
+    registerScreenTools(server, figmaApiKey);
 }
 

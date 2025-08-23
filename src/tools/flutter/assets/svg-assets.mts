@@ -2,7 +2,6 @@
 import {z} from "zod";
 import type {McpServer} from "@modelcontextprotocol/sdk/server/mcp.js";
 import {FigmaService} from "../../../services/figma.mjs";
-import {getFigmaToken} from "../../config.mjs";
 import {join} from 'path';
 import {
     createSvgAssetsDirectory,
@@ -14,7 +13,7 @@ import {
     type AssetInfo
 } from "./asset-manager.mjs";
 
-export function registerSvgAssetTools(server: McpServer) {
+export function registerSvgAssetTools(server: McpServer, figmaApiKey: string) {
     // Tool: Export SVG Flutter Assets
     server.registerTool(
         "export_svg_flutter_assets",
@@ -28,7 +27,7 @@ export function registerSvgAssetTools(server: McpServer) {
             }
         },
         async ({fileId, nodeIds, projectPath = process.cwd()}) => {
-            const token = getFigmaToken();
+            const token = figmaApiKey;
             if (!token) {
                 return {
                     content: [{

@@ -3,7 +3,6 @@
 import {z} from "zod";
 import type {McpServer} from "@modelcontextprotocol/sdk/server/mcp.js";
 import {FigmaService} from "../../../services/figma.mjs";
-import {getFigmaToken} from "../../config.mjs";
 import {
     ComponentExtractor,
     VariantAnalyzer,
@@ -30,7 +29,7 @@ import {
 } from "../assets/asset-manager.mjs";
 import {join} from 'path';
 
-export function registerComponentTools(server: McpServer) {
+export function registerComponentTools(server: McpServer, figmaApiKey: string) {
 
     // Main component analysis tool
     server.registerTool(
@@ -50,7 +49,7 @@ export function registerComponentTools(server: McpServer) {
             }
         },
         async ({input, nodeId, userDefinedComponent = false, maxChildNodes = 10, includeVariants = true, variantSelection, projectPath = process.cwd(), exportAssets = true}) => {
-            const token = getFigmaToken();
+            const token = figmaApiKey;
             if (!token) {
                 return {
                     content: [{
@@ -231,7 +230,7 @@ export function registerComponentTools(server: McpServer) {
             }
         },
         async ({input, nodeId}) => {
-            const token = getFigmaToken();
+            const token = figmaApiKey;
             if (!token) {
                 return {
                     content: [{
@@ -318,7 +317,7 @@ export function registerComponentTools(server: McpServer) {
             }
         },
         async ({input, nodeId, userDefinedComponent = false, showAllChildren = false}) => {
-            const token = getFigmaToken();
+            const token = figmaApiKey;
             if (!token) {
                 return {
                     content: [{

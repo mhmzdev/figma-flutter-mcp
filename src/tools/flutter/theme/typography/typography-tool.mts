@@ -3,12 +3,11 @@
 import {z} from "zod";
 import type {McpServer} from "@modelcontextprotocol/sdk/server/mcp.js";
 import {FigmaService} from "../../../../services/figma.mjs";
-import {getFigmaToken} from "../../../config.mjs";
 import {extractThemeTypography} from "../../../../extractors/typography/index.mjs";
 import {TypographyGenerator} from "./typography-generator.mjs";
 import {join} from 'path';
 
-export function registerTypographyTools(server: McpServer) {
+export function registerTypographyTools(server: McpServer, figmaApiKey: string) {
     server.registerTool(
         "extract_theme_typography",
         {
@@ -23,7 +22,7 @@ export function registerTypographyTools(server: McpServer) {
             }
         },
         async ({fileId, nodeId, projectPath = process.cwd(), generateTextTheme = false, familyVariableName = 'fontFamily'}) => {
-            const token = getFigmaToken();
+            const token = figmaApiKey;
             if (!token) {
                 return {
                     content: [{
@@ -164,7 +163,7 @@ export function registerTypographyTools(server: McpServer) {
             }
         },
         async ({fileId, nodeId}) => {
-            const token = getFigmaToken();
+            const token = figmaApiKey;
             if (!token) {
                 return {
                     content: [{

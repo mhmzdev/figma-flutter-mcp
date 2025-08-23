@@ -3,7 +3,7 @@
   
   <br>
 
-  <h1>Figma to Flutter MCP Server [Early]</h1>
+  <h1>Figma to Flutter MCP Server</h1>
   <h3>Utilize Figma's rich data in your coding agent.<br/>Implement designs in Flutter way!</h3>
   <a href="https://npmcharts.com/compare/figma-flutter-mcp?interval=30">
     <img alt="weekly downloads" src="https://img.shields.io/npm/dm/figma-flutter-mcp.svg">
@@ -19,8 +19,8 @@
 
 Use [Cursor](https://cursor.sh) or other AI-powered tools to access Figma's rich files, data, components and much more using [MCP server](https://modelcontextprotocol.io/).
 
-## 📝 Early Release
-Since this is my first time building MCP servers so marking this as ‘early,’ which means you might encounter bugs or unexpected behavior. As there's always a room for improvements so you can checkout the [issues](https://github.com/mhmzdev/figma-flutter-mcp/issues) to see what else there's to work or to improve.
+## 📝 First Release
+Since this is my first time building MCP servers which means you might encounter bugs or unexpected behavior. As there's always a room for improvements so you can checkout the [issues](https://github.com/mhmzdev/figma-flutter-mcp/issues) to see what else there's to work or to improve.
 
 ## 📚 How it works
 1. [Components/Widgets](src/extractors/components/)

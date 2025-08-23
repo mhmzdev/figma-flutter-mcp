@@ -1,0 +1,112 @@
+import {config as loadEnv} from "dotenv";
+import yargs from "yargs";
+import {hideBin} from "yargs/helpers";
+import {resolve} from "path";
+
+export interface ServerConfig {
+    figmaApiKey: string;
+    outputFormat: "yaml" | "json";
+    isStdioMode: boolean;
+    configSources: {
+        figmaApiKey: "cli" | "env";
+        envFile: "cli" | "default";
+        stdio: "cli" | "env" | "default";
+    };
+}
+
+function maskApiKey(key: string): string {
+    if (!key || key.length <= 4) return "****";
+    return `****${key.slice(-4)}`;
+}
+
+interface CliArgs {
+    "figma-api-key"?: string;
+    env?: string;
+    stdio?: boolean;
+}
+
+export function getServerConfig(): ServerConfig {
+    // Parse command line arguments
+    const argv = yargs(hideBin(process.argv))
+        .options({
+            "figma-api-key": {
+                type: "string",
+                description: "Figma API key",
+            },
+            env: {
+                type: "string",
+                description: "Path to custom .env file to load environment variables from",
+            },
+            stdio: {
+                type: "boolean",
+                description: "Run in stdio mode for MCP client communication",
+                default: false,
+            },
+        })
+        .help()
+        .version(process.env.npm_package_version || "0.0.1")
+        .parseSync() as CliArgs;
+
+    // Load environment variables from custom path or default
+    let envFilePath: string;
+    let envFileSource: "cli" | "default";
+
+    if (argv.env) {
+        envFilePath = resolve(argv.env);
+        envFileSource = "cli";
+    } else {
+        envFilePath = resolve(process.cwd(), ".env");
+        envFileSource = "default";
+    }
+
+    // Load .env file with override if custom path provided
+    loadEnv({path: envFilePath, override: !!argv.env});
+
+    const config: ServerConfig = {
+        figmaApiKey: "",
+        outputFormat: "json",
+        isStdioMode: false,
+        configSources: {
+            figmaApiKey: "env",
+            envFile: envFileSource,
+            stdio: "default",
+        },
+    };
+
+    // Handle FIGMA_API_KEY
+    if (argv["figma-api-key"]) {
+        config.figmaApiKey = argv["figma-api-key"];
+        config.configSources.figmaApiKey = "cli";
+    } else if (process.env.FIGMA_API_KEY) {
+        config.figmaApiKey = process.env.FIGMA_API_KEY;
+        config.configSources.figmaApiKey = "env";
+    }
+
+    // Handle stdio mode
+    if (argv.stdio) {
+        config.isStdioMode = true;
+        config.configSources.stdio = "cli";
+    } else if (process.env.NODE_ENV === "cli") {
+        config.isStdioMode = true;
+        config.configSources.stdio = "env";
+    }
+
+    // Validate configuration
+    if (!config.figmaApiKey) {
+        console.error("Error: FIGMA_API_KEY is required (via CLI argument or .env file)");
+        process.exit(1);
+    }
+
+    // Log configuration sources (only in non-stdio mode)
+    if (!config.isStdioMode) {
+        console.log("\nConfiguration:");
+        console.log(`- ENV_FILE: ${envFilePath} (source: ${config.configSources.envFile})`);
+        console.log(
+            `- FIGMA_API_KEY: ${maskApiKey(config.figmaApiKey)} (source: ${config.configSources.figmaApiKey})`
+        );
+        console.log(`- STDIO_MODE: ${config.isStdioMode} (source: ${config.configSources.stdio})`);
+        console.log(); // Empty line for better readability
+    }
+
+    return config;
+}

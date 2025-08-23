@@ -2,7 +2,6 @@
 import {z} from "zod";
 import type {McpServer} from "@modelcontextprotocol/sdk/server/mcp.js";
 import {FigmaService} from "../../../services/figma.mjs";
-import {getFigmaToken} from "../../config.mjs";
 import {join} from 'path';
 import {
     createAssetsDirectory,
@@ -15,7 +14,7 @@ import {
     type AssetInfo
 } from "./asset-manager.mjs";
 
-export function registerFlutterAssetTools(server: McpServer) {
+export function registerFlutterAssetTools(server: McpServer, figmaApiKey: string) {
     // Tool: Export Flutter Assets
     server.registerTool(
         "export_flutter_assets",
@@ -32,7 +31,7 @@ export function registerFlutterAssetTools(server: McpServer) {
             }
         },
         async ({fileId, nodeIds, projectPath = process.cwd(), format = 'png', scale = 2, includeMultipleResolutions = false}) => {
-            const token = getFigmaToken();
+            const token = figmaApiKey;
             if (!token) {
                 return {
                     content: [{
