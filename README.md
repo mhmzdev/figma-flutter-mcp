@@ -74,6 +74,8 @@ Once you've the FIGMA API KEY, you can setup the MCP in cursor as follows:
 }
 ```
 
+> NOTE: If the version didn't match with latest try replacing "figma-flutter-mcp@latest" in args. Sometimes, it caches the old version and keep showing you error like "Not being able to use tool call" or "Figma API key setup is not working" etc.
+
 ### 🧑🏼‍💻 Local Setup
 #### 0. Prerequisites
 - Node.js 18+
