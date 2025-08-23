@@ -1,4 +1,8 @@
 <div align="center">
+  <img src="docs/images/figma-flutter-mcp.png" alt="Theme Setup Example" style="max-width: 100%; height: auto;">
+  
+  <br>
+
   <h1>Figma to Flutter MCP Server [Early]</h1>
   <h3>Utilize Figma's rich data in your coding agent.<br/>Implement designs in Flutter way!</h3>
   <a href="https://npmcharts.com/compare/figma-flutter-mcp?interval=30">
