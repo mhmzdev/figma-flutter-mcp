@@ -2,12 +2,11 @@
 import {z} from "zod";
 import type {McpServer} from "@modelcontextprotocol/sdk/server/mcp.js";
 import {FigmaService} from "../../../../services/figma.mjs";
-import {getFigmaToken} from "../../../config.mjs";
 import {extractThemeColors} from "../../../../extractors/colors/index.mjs";
 import {SimpleThemeGenerator} from "./theme-generator.mjs";
 import {join} from 'path';
 
-export function registerThemeTools(server: McpServer) {
+export function registerThemeTools(server: McpServer, figmaApiKey: string) {
     server.registerTool(
         "extract_theme_colors",
         {
@@ -21,7 +20,7 @@ export function registerThemeTools(server: McpServer) {
             }
         },
         async ({fileId, nodeId, projectPath = process.cwd(), generateThemeData = false}) => {
-            const token = getFigmaToken();
+            const token = figmaApiKey;
             if (!token) {
                 return {
                     content: [{
@@ -130,7 +129,7 @@ export function registerThemeTools(server: McpServer) {
             }
         },
         async ({fileId, nodeId}) => {
-            const token = getFigmaToken();
+            const token = figmaApiKey;
             if (!token) {
                 return {
                     content: [{

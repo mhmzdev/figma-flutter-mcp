@@ -4,17 +4,24 @@ import {registerFlutterTools} from "./flutter/index.mjs";
 import {registerThemeTools} from "./flutter/theme/colors/theme-tool.mjs";
 import {registerTypographyTools} from "./flutter/theme/typography/typography-tool.mjs";
 
-export function registerAllTools(server: McpServer) {
+export function registerAllTools(server: McpServer, figmaApiKey: string) {
+    console.error('🛠️ Tools Debug - Starting tool registration...');
+
     // Register all tool categories
-    registerFlutterTools(server);
-    registerThemeTools(server);
-    registerTypographyTools(server);
-    
+    registerFlutterTools(server, figmaApiKey);
+    console.error('🛠️ Tools Debug - Flutter tools registered');
+
+    registerThemeTools(server, figmaApiKey);
+    console.error('🛠️ Tools Debug - Theme tools registered');
+
+    registerTypographyTools(server, figmaApiKey);
+    console.error('🛠️ Tools Debug - Typography tools registered');
+
     console.log("📋 Registered tool categories:");
     console.log("  🚀 Flutter tools - Widgets, Screens");
     console.log("  🏞️ Export assets - Images, SVGs");
     console.log("  🎨 Theme tools - Colors, Typography");
     console.log("  📝 Typography tools - Fonts, Sizes");
-}
 
-export {getFigmaToken} from "./config.mjs";
+    console.error('🛠️ Tools Debug - All tools registration complete');
+}

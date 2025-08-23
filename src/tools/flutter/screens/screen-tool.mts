@@ -3,7 +3,6 @@
 import {z} from "zod";
 import type {McpServer} from "@modelcontextprotocol/sdk/server/mcp.js";
 import {FigmaService} from "../../../services/figma.mjs";
-import {getFigmaToken} from "../../config.mjs";
 import {
     ScreenExtractor,
     parseComponentInput,
@@ -27,7 +26,7 @@ import {
 } from "../assets/asset-manager.mjs";
 import {join} from 'path';
 
-export function registerScreenTools(server: McpServer) {
+export function registerScreenTools(server: McpServer, figmaApiKey: string) {
 
     // Main screen analysis tool
     server.registerTool(
@@ -46,7 +45,7 @@ export function registerScreenTools(server: McpServer) {
             }
         },
         async ({input, nodeId, maxSections = 15, extractNavigation = true, extractAssets = true, projectPath = process.cwd(), deviceTypeDetection = true}) => {
-            const token = getFigmaToken();
+            const token = figmaApiKey;
             if (!token) {
                 return {
                     content: [{
@@ -145,7 +144,7 @@ export function registerScreenTools(server: McpServer) {
             }
         },
         async ({input, nodeId, showAllSections = false}) => {
-            const token = getFigmaToken();
+            const token = figmaApiKey;
             if (!token) {
                 return {
                     content: [{
