@@ -3,7 +3,7 @@
   "version": "0.1.4",
   "description": "MCP server for Figma to Flutter conversion",
   "type": "module",
-  "main": "dist/server.mjs",
+  "main": "dist/cli.mjs",
   "bin": {
     "figma-flutter-mcp": "dist/cli.mjs"
   },
@@ -14,8 +14,8 @@
   ],
   "scripts": {
     "build": "tsc",
-    "start": "node dist/server.mjs",
-    "dev": "tsx src/server.mts",
+    "start": "node dist/cli.mjs",
+    "dev": "tsx src/cli.mts",
     "changeset": "changeset add",
     "version": "changeset version && npm install --lockfile-only",
     "release": "changeset publish"
