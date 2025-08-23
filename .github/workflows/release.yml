@@ -1,0 +1,56 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  release:
+    name: Create a PR for release workflow
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build the package
+        run: npm run build
+      
+      - name: Create Version PR or Publish to NPM
+        id: changesets
+        uses: changesets/action@v1
+        with:
+          commit: "chore(release): version packages"
+          title: "chore(release): version packages"
+          version: npm run version
+          publish: npm run release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create GitHub Release
+        if: steps.changesets.outputs.published == 'true'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ fromJson(steps.changesets.outputs.publishedPackages)[0].version }}
+          name: Release v${{ fromJson(steps.changesets.outputs.publishedPackages)[0].version }}
+          body: |
+            ## What's Changed
+            
+            ${{ fromJson(steps.changesets.outputs.publishedPackages)[0].changelog }}
+            
+            **Full Changelog**: https://github.com/mhmzdev/figma-flutter-mcp/compare/v${{ fromJson(steps.changesets.outputs.publishedPackages)[0].version }}...HEAD
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
