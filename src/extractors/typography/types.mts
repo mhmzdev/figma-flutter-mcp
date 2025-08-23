@@ -54,16 +54,6 @@ export type TypographyExtractorFn = (
 ) => string[] | null; // Returns typography IDs
 
 /**
- * Typography extraction result
- */
-export interface TypographyExtractionResult {
-    themeTypography: TypographyStyle[];
-    typographyLibrary: TypographyDefinition[];
-    totalStyles: number;
-    fontFamilies: Set<string>; // All unique font families found
-}
-
-/**
  * Typography extraction options
  */
 export interface TypographyExtractionOptions {

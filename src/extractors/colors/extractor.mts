@@ -30,58 +30,6 @@ export function extractColorsFromThemeFrame(frameNode: FigmaNode): ThemeColor[] 
 }
 
 /**
- * Extract fills-based colors for design system extraction
- */
-export const fillColorExtractor: ColorExtractorFn = (node, context, colorLibrary) => {
-    if (!node.fills || !Array.isArray(node.fills)) {
-        return null;
-    }
-
-    // Skip typography-related nodes in design system extraction too
-    if (isTypographyNode(node)) {
-        return null;
-    }
-
-    const colorIds: string[] = [];
-
-    node.fills.forEach(fill => {
-        if (fill.type === 'SOLID' && fill.color && fill.visible !== false) {
-            const colorValue = rgbaToHex(fill.color);
-            const colorId = addColorToLibrary(colorValue, node.name, colorLibrary, context.colorMap);
-            colorIds.push(colorId);
-        }
-    });
-
-    return colorIds.length > 0 ? colorIds : null;
-};
-
-/**
- * Extract stroke colors for design system extraction
- */
-export const strokeColorExtractor: ColorExtractorFn = (node, context, colorLibrary) => {
-    if (!node.strokes || !Array.isArray(node.strokes)) {
-        return null;
-    }
-
-    // Skip typography-related nodes in design system extraction too
-    if (isTypographyNode(node)) {
-        return null;
-    }
-
-    const colorIds: string[] = [];
-
-    node.strokes.forEach(stroke => {
-        if (stroke.type === 'SOLID' && stroke.color && stroke.visible !== false) {
-            const colorValue = rgbaToHex(stroke.color);
-            const colorId = addColorToLibrary(colorValue, node.name, colorLibrary, context.colorMap);
-            colorIds.push(colorId);
-        }
-    });
-
-    return colorIds.length > 0 ? colorIds : null;
-};
-
-/**
  * Extract color from a single node (used by theme frame extraction)
  */
 function extractColorFromNode(node: FigmaNode): ThemeColor | null {

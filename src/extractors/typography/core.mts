@@ -6,12 +6,10 @@ import type {
     TypographyDefinition,
     TypographyExtractionContext,
     TypographyExtractorFn,
-    TypographyExtractionResult,
     TypographyExtractionOptions
 } from './types.mjs';
 import {
     extractTypographyFromThemeFrame,
-    textStyleExtractor
 } from './extractor.mjs';
 
 /**
@@ -27,51 +25,6 @@ export class TypographyExtractor {
      */
     extractThemeFromFrame(frameNode: FigmaNode): TypographyStyle[] {
         return extractTypographyFromThemeFrame(frameNode);
-    }
-
-    /**
-     * Extract typography from entire Figma file with deduplication
-     */
-    extractFromFile(
-        file: {document: FigmaNode},
-        extractors: TypographyExtractorFn[] = [textStyleExtractor],
-        options: TypographyExtractionOptions = {}
-    ): TypographyExtractionResult {
-        // Reset state
-        this.resetLibraries();
-
-        const context: TypographyExtractionContext = {
-            typographyMap: this.typographyMap,
-            currentDepth: 0,
-            maxDepth: options.maxDepth || 5
-        };
-
-        // Extract typography from all pages
-        if (file.document.children) {
-            file.document.children.forEach(page => {
-                this.extractFromNode(page, extractors, context, options);
-            });
-        }
-
-        // Filter by minimum usage count if specified
-        let filteredLibrary = this.typographyLibrary;
-        if (options.minUsageCount && options.minUsageCount > 1) {
-            filteredLibrary = this.typographyLibrary.filter(typography => 
-                typography.usageCount >= options.minUsageCount!
-            );
-        }
-
-        // Collect all font families
-        this.typographyLibrary.forEach(typography => {
-            this.fontFamilies.add(typography.fontFamily);
-        });
-
-        return {
-            themeTypography: [], // Theme typography comes from frame extraction
-            typographyLibrary: filteredLibrary,
-            totalStyles: this.typographyLibrary.length,
-            fontFamilies: new Set(this.fontFamilies)
-        };
     }
 
     /**
@@ -310,15 +263,4 @@ export class TypographyExtractor {
 export function extractThemeTypography(frameNode: FigmaNode): TypographyStyle[] {
     const extractor = new TypographyExtractor();
     return extractor.extractThemeFromFrame(frameNode);
-}
-
-/**
- * Convenience function to extract design system typography from a file
- */
-export function extractDesignSystemTypography(
-    file: {document: FigmaNode},
-    options?: TypographyExtractionOptions
-): TypographyExtractionResult {
-    const extractor = new TypographyExtractor();
-    return extractor.extractFromFile(file, undefined, options);
 }

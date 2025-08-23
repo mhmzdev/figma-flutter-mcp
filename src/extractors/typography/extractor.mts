@@ -45,62 +45,6 @@ export function extractTypographyFromThemeFrame(frameNode: FigmaNode): Typograph
 }
 
 /**
- * Extract text styles for design system extraction
- */
-export const textStyleExtractor: TypographyExtractorFn = (node, context, typographyLibrary) => {
-    if (node.type !== 'TEXT' || !node.style) {
-        return null;
-    }
-
-    // Skip if text is hidden
-    if (node.visible === false) {
-        return null;
-    }
-
-    // Skip if text appears to be sample/demo content
-    if (isTypographyDemoNode(node)) {
-        return null;
-    }
-
-    const styleIds: string[] = [];
-
-    // Create hash for style deduplication
-    const styleHash = createTextStyleHash(node.style);
-    const hashString = JSON.stringify(styleHash);
-
-    let styleId = context.typographyMap.get(hashString);
-    if (!styleId) {
-        // Create new typography definition
-        styleId = `typography_${typographyLibrary.length + 1}`;
-
-        const typographyDef: TypographyDefinition = {
-            id: styleId,
-            name: generateTypographyName(node.style, node.name),
-            fontFamily: node.style.fontFamily || 'default',
-            fontSize: node.style.fontSize || 16,
-            fontWeight: node.style.fontWeight || 400,
-            lineHeight: node.style.lineHeightPx || (node.style.fontSize || 16) * 1.2,
-            letterSpacing: node.style.letterSpacing || 0,
-            usage: categorizeTypographyUsage(node.style, node.name),
-            usageCount: 1,
-            dartName: generateDartSafeName(node.style, node.name)
-        };
-
-        typographyLibrary.push(typographyDef);
-        context.typographyMap.set(hashString, styleId);
-    } else {
-        // Increment usage count
-        const typography = typographyLibrary.find(t => t.id === styleId);
-        if (typography) {
-            typography.usageCount++;
-        }
-    }
-
-    styleIds.push(styleId);
-    return styleIds.length > 0 ? styleIds : null;
-};
-
-/**
  * Extract typography from a single node (used by theme frame extraction)
  */
 function extractTypographyFromNode(node: FigmaNode): TypographyStyle | null {
