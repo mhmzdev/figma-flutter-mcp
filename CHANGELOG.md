@@ -1,5 +1,11 @@
 # figma-flutter-mcp
 
+## 0.1.5
+
+### Patch Changes
+
+- [`611ee64`](https://github.com/mhmzdev/figma-flutter-mcp/commit/611ee646d684925808ae9191ba851c9a86cb1d7b) Thanks [@mhmzdev](https://github.com/mhmzdev)! - Removed empty files so that AI model doesn't get confused
+
 ## 0.1.4
 
 ### Patch Changes
