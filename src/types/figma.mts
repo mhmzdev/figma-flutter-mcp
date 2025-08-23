@@ -32,6 +32,10 @@ export interface FigmaNode {
     paddingTop?: number;
     paddingBottom?: number;
     itemSpacing?: number;
+    // Text-specific properties
+    characters?: string; // Actual text content for TEXT nodes
+    characterStyleOverrides?: number[];
+    styleOverrideTable?: {[key: string]: FigmaTextStyle};
 }
 
 export interface FigmaComponent {
