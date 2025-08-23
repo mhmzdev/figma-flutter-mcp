@@ -169,41 +169,6 @@ export class FigmaService {
     }
 
     /**
-     * Get a specific page by ID from a file
-     */
-    async getPage(fileId: string, pageId: string): Promise<FigmaNode> {
-        if (!pageId || pageId.trim().length === 0) {
-            throw new FigmaError('Page ID is required', 'INVALID_INPUT');
-        }
-
-        try {
-            // Pages are retrieved using the same nodes endpoint since pages are nodes
-            const data = await this.makeRequest<NodeResponse>(`/files/${fileId}/nodes?ids=${pageId}`);
-
-            if (!data.nodes || !data.nodes[pageId]) {
-                throw new FigmaNotFoundError('Page', pageId);
-            }
-
-            const pageData = data.nodes[pageId];
-            if (!pageData.document) {
-                throw new FigmaParseError('Invalid page structure received from Figma API', pageData);
-            }
-
-            // Verify this is actually a page node
-            if (pageData.document.type !== 'CANVAS') {
-                throw new FigmaError(`Node ${pageId} is not a page (type: ${pageData.document.type})`, 'INVALID_NODE_TYPE');
-            }
-
-            return pageData.document;
-        } catch (error) {
-            if (error instanceof FigmaError) {
-                throw error;
-            }
-            throw new FigmaError(`Failed to fetch page ${pageId}: ${error}`, 'FETCH_ERROR');
-        }
-    }
-
-    /**
      * Get image export URLs
      */
     async getImageExportUrls(
