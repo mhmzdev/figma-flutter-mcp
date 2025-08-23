@@ -37,11 +37,11 @@ export function registerComponentTools(server: McpServer) {
         "analyze_figma_component",
         {
             title: "Analyze Figma Component",
-            description: "Analyze a Figma component or component set to extract layout, styling, and structure information for Flutter widget creation",
+            description: "Analyze a Figma component or component set to extract layout, styling, and structure information for Flutter widget creation. Use analyze_full_screen for complete screen layouts.",
             inputSchema: {
                 input: z.string().describe("Figma component URL or file ID"),
                 nodeId: z.string().optional().describe("Node ID (if providing file ID separately)"),
-                userDefinedComponent: z.boolean().optional().describe("Treat as component even if it's a FRAME (default: false)"),
+                userDefinedComponent: z.boolean().optional().describe("Treat a FRAME as a component (when designer hasn't converted to actual component yet) (default: false)"),
                 maxChildNodes: z.number().optional().describe("Maximum child nodes to analyze (default: 10)"),
                 includeVariants: z.boolean().optional().describe("Include variant analysis for component sets (default: true)"),
                 variantSelection: z.array(z.string()).optional().describe("Specific variant names to analyze (if >3 variants)"),
@@ -90,6 +90,28 @@ export function registerComponentTools(server: McpServer) {
                             text: `Component with node ID "${parsedInput.nodeId}" not found in file.`
                         }]
                     };
+                }
+
+                // Validate that this is a component or user-defined component
+                const isActualComponent = componentNode.type === 'COMPONENT' || componentNode.type === 'COMPONENT_SET' || componentNode.type === 'INSTANCE';
+                const isUserDefinedFrame = componentNode.type === 'FRAME' && userDefinedComponent;
+                
+                if (!isActualComponent && !isUserDefinedFrame) {
+                    if (componentNode.type === 'FRAME') {
+                        return {
+                            content: [{
+                                type: "text",
+                                text: `Node "${componentNode.name}" is a FRAME. If this should be treated as a component, set userDefinedComponent: true. For analyzing complete screens, use the analyze_full_screen tool instead.`
+                            }]
+                        };
+                    } else {
+                        return {
+                            content: [{
+                                type: "text",
+                                text: `Node "${componentNode.name}" is not a component (type: ${componentNode.type}). For analyzing full screens, use the analyze_full_screen tool instead.`
+                            }]
+                        };
+                    }
                 }
 
                 // Check if this is a component set and handle variants
@@ -147,7 +169,7 @@ export function registerComponentTools(server: McpServer) {
                         componentAnalysis = await componentExtractor.analyzeComponent(componentNode, userDefinedComponent);
                     }
                 } else {
-                    // Regular component or frame
+                    // Regular component, instance, or user-defined frame
                     componentAnalysis = await componentExtractor.analyzeComponent(componentNode, userDefinedComponent);
                 }
 
@@ -287,14 +309,15 @@ export function registerComponentTools(server: McpServer) {
         "inspect_component_structure",
         {
             title: "Inspect Component Structure",
-            description: "Get a quick overview of component structure, children, and nested components",
+            description: "Get a quick overview of component structure, children, and nested components. Use inspect_screen_structure for full screens.",
             inputSchema: {
                 input: z.string().describe("Figma component URL or file ID"),
                 nodeId: z.string().optional().describe("Node ID (if providing file ID separately)"),
+                userDefinedComponent: z.boolean().optional().describe("Treat a FRAME as a component (when designer hasn't converted to actual component yet) (default: false)"),
                 showAllChildren: z.boolean().optional().describe("Show all children regardless of limits (default: false)")
             }
         },
-        async ({input, nodeId, showAllChildren = false}) => {
+        async ({input, nodeId, userDefinedComponent = false, showAllChildren = false}) => {
             const token = getFigmaToken();
             if (!token) {
                 return {
@@ -327,6 +350,28 @@ export function registerComponentTools(server: McpServer) {
                             text: `Component with node ID "${parsedInput.nodeId}" not found.`
                         }]
                     };
+                }
+
+                // Validate that this is a component or user-defined component
+                const isActualComponent = componentNode.type === 'COMPONENT' || componentNode.type === 'COMPONENT_SET' || componentNode.type === 'INSTANCE';
+                const isUserDefinedFrame = componentNode.type === 'FRAME' && userDefinedComponent;
+                
+                if (!isActualComponent && !isUserDefinedFrame) {
+                    if (componentNode.type === 'FRAME') {
+                        return {
+                            content: [{
+                                type: "text",
+                                text: `Node "${componentNode.name}" is a FRAME. If this should be treated as a component, set userDefinedComponent: true. For inspecting complete screens, use the inspect_screen_structure tool instead.`
+                            }]
+                        };
+                    } else {
+                        return {
+                            content: [{
+                                type: "text",
+                                text: `Node "${componentNode.name}" is not a component (type: ${componentNode.type}). For inspecting full screens, use the inspect_screen_structure tool instead.`
+                            }]
+                        };
+                    }
                 }
 
                 const output = generateStructureInspectionReport(componentNode, showAllChildren);
