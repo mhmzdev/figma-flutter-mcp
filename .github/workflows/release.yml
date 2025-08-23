@@ -9,6 +9,9 @@ jobs:
   release:
     name: Create a PR for release workflow
     runs-on: ubuntu-latest
+    # Skip if commit message contains [skip ci], [ci skip], or docs:
+    if: "!contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[ci skip]') && !startsWith(github.event.head_commit.message, 'docs:')"
+    
     steps:
       - uses: actions/checkout@v4
         with:
