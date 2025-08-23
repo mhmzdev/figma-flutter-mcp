@@ -4,7 +4,6 @@ import type {FigmaNode} from '../../types/figma.mjs';
 import type {
     ThemeColor,
     ColorDefinition,
-    ColorExtractionContext,
     ColorExtractorFn
 } from './types.mjs';
 

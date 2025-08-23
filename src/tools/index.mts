@@ -13,9 +13,10 @@ export function registerAllTools(server: McpServer) {
     registerTypographyTools(server);
     
     console.log("📋 Registered tool categories:");
-    console.log("  🎨 Figma tools");
-    console.log("  🚀 Flutter tools");
-    console.log("  📝 Typography tools");
+    console.log("  🚀 Flutter tools - Widgets, Screens");
+    console.log("  🏞️ Export assets - Images, SVGs");
+    console.log("  🎨 Theme tools - Colors, Typography");
+    console.log("  📝 Typography tools - Fonts, Sizes");
 }
 
 export {getFigmaToken} from "./config.mjs";
