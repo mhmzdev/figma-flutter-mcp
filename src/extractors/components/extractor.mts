@@ -437,18 +437,438 @@ export function extractBasicStyling(node: FigmaNode): Partial<StylingInfo> {
 }
 
 /**
- * Extract text information
+ * Extract enhanced text information
  */
 export function extractTextInfo(node: FigmaNode): TextInfo | undefined {
-    if (!node.style) return undefined;
+    if (node.type !== 'TEXT') return undefined;
+
+    const textContent = getActualTextContent(node);
+    const isPlaceholder = isPlaceholderText(textContent);
 
     return {
-        content: node.name, // Figma doesn't provide text content in API, use name as fallback
-        fontFamily: node.style.fontFamily,
-        fontSize: node.style.fontSize,
-        fontWeight: node.style.fontWeight,
-        textAlign: node.style.textAlignHorizontal
+        content: textContent,
+        isPlaceholder,
+        fontFamily: node.style?.fontFamily,
+        fontSize: node.style?.fontSize,
+        fontWeight: node.style?.fontWeight,
+        textAlign: node.style?.textAlignHorizontal,
+        textCase: detectTextCase(textContent),
+        semanticType: detectSemanticType(textContent, node.name),
+        placeholder: isPlaceholder
     };
+}
+
+/**
+ * Get actual text content from various sources
+ */
+function getActualTextContent(node: FigmaNode): string {
+    // 1. Primary source: characters property (official Figma API text content)
+    if (node.characters && node.characters.trim().length > 0) {
+        return node.characters.trim();
+    }
+
+    // 2. Check fills for text content (sometimes stored in fill metadata)
+    if (node.fills) {
+        for (const fill of node.fills) {
+            if ((fill as any).textData || (fill as any).content) {
+                const textContent = (fill as any).textData || (fill as any).content;
+                if (textContent && textContent.trim().length > 0) {
+                    return textContent.trim();
+                }
+            }
+        }
+    }
+
+    // 3. Check for text in component properties (for component instances)
+    if (node.type === 'INSTANCE' && (node as any).componentProperties) {
+        const textProps = extractTextFromComponentProperties((node as any).componentProperties);
+        if (textProps && textProps.trim().length > 0) {
+            return textProps.trim();
+        }
+    }
+
+    // 4. Analyze node name for meaningful content
+    const nodeName = node.name;
+
+    // If node name looks like actual content (not generic), use it
+    if (isLikelyActualContent(nodeName)) {
+        return nodeName;
+    }
+
+    // 5. Fallback to node name with placeholder flag
+    return nodeName;
+}
+
+/**
+ * Check if node name looks like actual content vs generic label
+ */
+function isLikelyActualContent(name: string): boolean {
+    const genericPatterns = [
+        /^text$/i,
+        /^label$/i,
+        /^heading$/i,
+        /^title$/i,
+        /^body\s*\d*$/i,
+        /^text\s*\d+$/i,
+        /^heading\s*\d+$/i,
+        /^h\d+$/i,
+        /^lorem\s+ipsum/i,
+        /^sample\s+text/i,
+        /^placeholder/i,
+        /^example\s+text/i,
+        /^demo\s+text/i,
+        /^text\s*layer/i,
+        /^component\s*\d+/i
+    ];
+
+    // If it matches generic patterns, it's probably not actual content
+    if (genericPatterns.some(pattern => pattern.test(name))) {
+        return false;
+    }
+
+    // If it's very short and common UI text, it might be actual content
+    const shortUIText = ['ok', 'yes', 'no', 'save', 'cancel', 'close', 'menu', 'home', 'back', 'next', 'login', 'signup'];
+    if (name.length <= 8 && shortUIText.includes(name.toLowerCase())) {
+        return true;
+    }
+
+    // If it contains real words and is reasonably long, likely actual content
+    if (name.length > 3 && name.length < 100) {
+        // Check if it has word-like structure
+        const hasWords = /\b[a-zA-Z]{2,}\b/.test(name);
+        const hasSpaces = name.includes(' ');
+
+        if (hasWords && (hasSpaces || name.length > 8)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/**
+ * Check if text content is placeholder/dummy text
+ */
+function isPlaceholderText(content: string): boolean {
+    if (!content || content.trim().length === 0) {
+        return true;
+    }
+
+    const trimmedContent = content.trim().toLowerCase();
+
+    // Common placeholder patterns
+    const placeholderPatterns = [
+        /lorem\s+ipsum/i,
+        /dolor\s+sit\s+amet/i,
+        /consectetur\s+adipiscing/i,
+        /the\s+quick\s+brown\s+fox/i,
+        /sample\s+text/i,
+        /placeholder/i,
+        /example\s+text/i,
+        /demo\s+text/i,
+        /test\s+content/i,
+        /dummy\s+text/i,
+        /text\s+goes\s+here/i,
+        /your\s+text\s+here/i,
+        /add\s+text\s+here/i,
+        /enter\s+text/i,
+        /\[.*\]/,  // Text in brackets like [Your text here]
+        /^heading\s*\d*$/i,
+        /^title\s*\d*$/i,
+        /^body\s*\d*$/i,
+        /^text\s*\d*$/i,
+        /^label\s*\d*$/i,
+        /^h[1-6]$/i,
+        /^paragraph$/i,
+        /^caption$/i,
+        /^subtitle$/i,
+        /^overline$/i
+    ];
+
+    // Check against placeholder patterns
+    if (placeholderPatterns.some(pattern => pattern.test(content))) {
+        return true;
+    }
+
+    // Check for generic single words that are likely placeholders
+    const genericWords = [
+        'text', 'label', 'title', 'heading', 'body', 'content', 
+        'description', 'subtitle', 'caption', 'paragraph', 'copy'
+    ];
+
+    if (genericWords.includes(trimmedContent)) {
+        return true;
+    }
+
+    // Check for repeated characters (like "AAAA" or "xxxx")
+    if (content.length > 2 && /^(.)\1+$/.test(content.trim())) {
+        return true;
+    }
+
+    // Check for Lorem Ipsum variations
+    if (/lorem|ipsum|dolor|sit|amet|consectetur|adipiscing|elit/i.test(content)) {
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * Extract text from component properties
+ */
+function extractTextFromComponentProperties(properties: any): string | null {
+    if (!properties || typeof properties !== 'object') {
+        return null;
+    }
+
+    // Look for common text property names
+    const textPropertyNames = ['text', 'label', 'title', 'content', 'value', 'caption'];
+
+    for (const propName of textPropertyNames) {
+        if (properties[propName] && typeof properties[propName] === 'string') {
+            return properties[propName];
+        }
+    }
+
+    // Look for any string property that might contain text
+    for (const [key, value] of Object.entries(properties)) {
+        if (typeof value === 'string' && value.length > 0 && !isPlaceholderText(value)) {
+            return value;
+        }
+    }
+
+    return null;
+}
+
+/**
+ * Detect text case pattern
+ */
+function detectTextCase(content: string): 'uppercase' | 'lowercase' | 'capitalize' | 'sentence' | 'mixed' {
+    if (content.length === 0) return 'mixed';
+
+    const isAllUpper = content === content.toUpperCase() && content !== content.toLowerCase();
+    const isAllLower = content === content.toLowerCase() && content !== content.toUpperCase();
+
+    if (isAllUpper) return 'uppercase';
+    if (isAllLower) return 'lowercase';
+
+    // Check if it's title case (first letter of each word capitalized)
+    const words = content.split(/\s+/);
+    const isTitleCase = words.every(word => {
+        return word.length === 0 || word[0] === word[0].toUpperCase();
+    });
+
+    if (isTitleCase) return 'capitalize';
+
+    // Check if it's sentence case (first letter capitalized, rest normal)
+    if (content[0] === content[0].toUpperCase()) {
+        return 'sentence';
+    }
+
+    return 'mixed';
+}
+
+/**
+ * Detect semantic type of text based on content and context
+ */
+function detectSemanticType(content: string, nodeName: string): 'heading' | 'body' | 'label' | 'button' | 'link' | 'caption' | 'error' | 'success' | 'warning' | 'other' {
+    const lowerContent = content.toLowerCase().trim();
+    const lowerNodeName = nodeName.toLowerCase();
+
+    // Skip detection for placeholder text
+    if (isPlaceholderText(content)) {
+        return 'other';
+    }
+
+    // Button text patterns - exact matches for common button labels
+    const buttonPatterns = [
+        /^(click|tap|press|submit|send|save|cancel|ok|yes|no|continue|next|back|close|done|finish|start|begin)$/i,
+        /^(login|log in|sign in|signup|sign up|register|logout|log out|sign out)$/i,
+        /^(buy|purchase|add|remove|delete|edit|update|create|new|get started|learn more|try now)$/i,
+        /^(download|upload|share|copy|paste|cut|undo|redo|refresh|reload|search|filter|sort|apply|reset|clear)$/i,
+        /^(accept|decline|agree|disagree|confirm|verify|validate|approve|reject)$/i
+    ];
+
+    if (buttonPatterns.some(pattern => pattern.test(content)) || lowerNodeName.includes('button')) {
+        return 'button';
+    }
+
+    // Error/status text patterns - more comprehensive detection
+    const errorPatterns = /error|invalid|required|missing|failed|wrong|incorrect|forbidden|unauthorized|not found|unavailable|expired|timeout/i;
+    const successPatterns = /success|completed|done|saved|updated|created|uploaded|downloaded|sent|delivered|confirmed|verified|approved/i;
+    const warningPatterns = /warning|caution|note|important|attention|notice|alert|reminder|tip|info|information/i;
+
+    if (errorPatterns.test(content)) {
+        return 'error';
+    }
+
+    if (successPatterns.test(content)) {
+        return 'success';
+    }
+
+    if (warningPatterns.test(content)) {
+        return 'warning';
+    }
+
+    // Link patterns - navigation and informational links
+    const linkPatterns = [
+        /^(learn more|read more|see more|view all|show all|details|click here|view details)$/i,
+        /^(about|contact|help|support|faq|terms|privacy|policy|documentation|docs|guide|tutorial)$/i,
+        /^(home|dashboard|profile|settings|preferences|account|billing|notifications|security)$/i
+    ];
+
+    if (linkPatterns.some(pattern => pattern.test(content)) || lowerNodeName.includes('link')) {
+        return 'link';
+    }
+
+    // Heading patterns - based on structure and context
+    if (content.length < 80 && !content.endsWith('.') && !content.includes('\n')) {
+        if (lowerNodeName.includes('heading') || lowerNodeName.includes('title') || /h[1-6]/.test(lowerNodeName)) {
+            return 'heading';
+        }
+        // Check if it looks like a title (short, starts with capital, no sentence punctuation)
+        if (content.length < 50 && /^[A-Z]/.test(content) && !/[.!?]$/.test(content)) {
+            return 'heading';
+        }
+    }
+
+    // Label patterns - form labels and descriptive text
+    if (content.length < 40 && (content.endsWith(':') || lowerNodeName.includes('label') || lowerNodeName.includes('field'))) {
+        return 'label';
+    }
+
+    // Caption patterns - short descriptive text
+    if (content.length < 120 && (
+        lowerNodeName.includes('caption') || 
+        lowerNodeName.includes('subtitle') || 
+        lowerNodeName.includes('description') ||
+        lowerNodeName.includes('meta')
+    )) {
+        return 'caption';
+    }
+
+    // Body text - longer content, paragraphs
+    if (content.length > 80 || content.includes('\n') || content.includes('. ')) {
+        return 'body';
+    }
+
+    return 'other';
+}
+
+/**
+ * Generate Flutter widget suggestion based on semantic type and text info
+ */
+export function generateFlutterTextWidget(textInfo: TextInfo): string {
+    // Escape single quotes in content for Dart strings
+    const escapedContent = textInfo.content.replace(/'/g, "\\'");
+    
+    if (textInfo.isPlaceholder) {
+        return `Text('${escapedContent}') // TODO: Replace with actual content`;
+    }
+
+    // Generate style properties based on text info
+    const styleProps: string[] = [];
+    if (textInfo.fontFamily) {
+        styleProps.push(`fontFamily: '${textInfo.fontFamily}'`);
+    }
+    if (textInfo.fontSize) {
+        styleProps.push(`fontSize: ${textInfo.fontSize}`);
+    }
+    if (textInfo.fontWeight && textInfo.fontWeight !== 400) {
+        const fontWeight = textInfo.fontWeight >= 700 ? 'FontWeight.bold' : 
+                          textInfo.fontWeight >= 600 ? 'FontWeight.w600' :
+                          textInfo.fontWeight >= 500 ? 'FontWeight.w500' :
+                          textInfo.fontWeight <= 300 ? 'FontWeight.w300' : 'FontWeight.normal';
+        styleProps.push(`fontWeight: ${fontWeight}`);
+    }
+
+    const customStyle = styleProps.length > 0 ? `TextStyle(${styleProps.join(', ')})` : null;
+
+    switch (textInfo.semanticType) {
+        case 'button':
+            return `ElevatedButton(\n  onPressed: () {\n    // TODO: Implement button action\n  },\n  child: Text('${escapedContent}'),\n)`;
+
+        case 'link':
+            return `TextButton(\n  onPressed: () {\n    // TODO: Implement navigation\n  },\n  child: Text('${escapedContent}'),\n)`;
+
+        case 'heading':
+            const headingStyle = customStyle || 'Theme.of(context).textTheme.headlineMedium';
+            return `Text(\n  '${escapedContent}',\n  style: ${headingStyle},\n)`;
+
+        case 'body':
+            const bodyStyle = customStyle || 'Theme.of(context).textTheme.bodyMedium';
+            return `Text(\n  '${escapedContent}',\n  style: ${bodyStyle},\n)`;
+
+        case 'caption':
+            const captionStyle = customStyle || 'Theme.of(context).textTheme.bodySmall';
+            return `Text(\n  '${escapedContent}',\n  style: ${captionStyle},\n)`;
+
+        case 'label':
+            const labelStyle = customStyle || 'Theme.of(context).textTheme.labelMedium';
+            return `Text(\n  '${escapedContent}',\n  style: ${labelStyle},\n)`;
+
+        case 'error':
+            const errorStyle = customStyle ? 
+                `${customStyle.slice(0, -1)}, color: Theme.of(context).colorScheme.error)` :
+                'TextStyle(color: Theme.of(context).colorScheme.error)';
+            return `Text(\n  '${escapedContent}',\n  style: ${errorStyle},\n)`;
+
+        case 'success':
+            const successStyle = customStyle ?
+                `${customStyle.slice(0, -1)}, color: Colors.green)` :
+                'TextStyle(color: Colors.green)';
+            return `Text(\n  '${escapedContent}',\n  style: ${successStyle},\n)`;
+
+        case 'warning':
+            const warningStyle = customStyle ?
+                `${customStyle.slice(0, -1)}, color: Colors.orange)` :
+                'TextStyle(color: Colors.orange)';
+            return `Text(\n  '${escapedContent}',\n  style: ${warningStyle},\n)`;
+
+        default:
+            return customStyle ? 
+                `Text(\n  '${escapedContent}',\n  style: ${customStyle},\n)` :
+                `Text('${escapedContent}')`;
+    }
+}
+
+/**
+ * Get all text content from a component tree
+ */
+export function extractAllTextContent(node: FigmaNode): Array<{nodeId: string, textInfo: TextInfo, widgetSuggestion: string}> {
+    const textNodes: Array<{nodeId: string, textInfo: TextInfo, widgetSuggestion: string}> = [];
+
+    traverseForText(node, textNodes);
+
+    return textNodes;
+}
+
+/**
+ * Recursively traverse node tree to find all text nodes
+ */
+function traverseForText(
+    node: FigmaNode,
+    results: Array<{nodeId: string, textInfo: TextInfo, widgetSuggestion: string}>,
+    depth: number = 0
+): void {
+    if (depth > 5) return; // Prevent infinite recursion
+
+    if (node.type === 'TEXT') {
+        const textInfo = extractTextInfo(node);
+        if (textInfo) {
+            results.push({
+                nodeId: node.id,
+                textInfo,
+                widgetSuggestion: generateFlutterTextWidget(textInfo)
+            });
+        }
+    }
+
+    if (node.children) {
+        node.children.forEach(child => {
+            traverseForText(child, results, depth + 1);
+        });
+    }
 }
 
 /**

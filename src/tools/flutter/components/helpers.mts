@@ -1,5 +1,6 @@
 import type {ComponentVariant} from "../../../extractors/components/types.mjs";
 import type {ComponentAnalysis} from "../../../extractors/components/types.mjs";
+import {generateFlutterTextWidget} from "../../../extractors/components/extractor.mjs";
 
 /**
  * Generate variant selection prompt when there are more than 3 variants
@@ -162,9 +163,22 @@ export function generateComponentAnalysisReport(
             }
 
             if (child.basicInfo?.text) {
-                output += `   Text Content: "${child.basicInfo.text.content || 'N/A'}"\n`;
-                if (child.basicInfo.text.fontFamily && child.basicInfo.text.fontSize) {
-                    output += `   Typography: ${child.basicInfo.text.fontFamily} ${child.basicInfo.text.fontSize}px\n`;
+                const textInfo = child.basicInfo.text;
+                const placeholderMark = textInfo.isPlaceholder ? ' [PLACEHOLDER]' : '';
+                const semanticMark = textInfo.semanticType && textInfo.semanticType !== 'other' ? ` [${textInfo.semanticType.toUpperCase()}]` : '';
+
+                output += `   Text Content: "${textInfo.content}"${placeholderMark}${semanticMark}\n`;
+
+                if (textInfo.fontFamily || textInfo.fontSize || textInfo.fontWeight) {
+                    const fontParts = [];
+                    if (textInfo.fontFamily) fontParts.push(textInfo.fontFamily);
+                    if (textInfo.fontSize) fontParts.push(`${textInfo.fontSize}px`);
+                    if (textInfo.fontWeight && textInfo.fontWeight !== 400) fontParts.push(`weight: ${textInfo.fontWeight}`);
+                    output += `   Typography: ${fontParts.join(' ')}\n`;
+                }
+
+                if (textInfo.textCase && textInfo.textCase !== 'mixed') {
+                    output += `   Text Case: ${textInfo.textCase}\n`;
                 }
             }
         });
@@ -305,26 +319,28 @@ export function generateFlutterGuidance(analysis: ComponentAnalysis): string {
         guidance += `\nAnalyze each nested component separately using the analyze_figma_component tool.\n\n`;
     }
 
-    // Text widget guidance
+    // Text widget guidance with enhanced Flutter suggestions
     const textChildren = analysis.children.filter(child => child.type === 'TEXT');
     if (textChildren.length > 0) {
-        guidance += `Text Elements:\n`;
+        guidance += `Text Elements & Flutter Widgets:\n`;
         textChildren.forEach((textChild, index) => {
-            guidance += `${index + 1}. Text('${textChild.basicInfo?.text?.content || textChild.name}')`;
-            if (textChild.basicInfo?.text?.fontFamily || textChild.basicInfo?.text?.fontSize) {
-                guidance += `\n   style: TextStyle(`;
-                if (textChild.basicInfo?.text?.fontFamily) {
-                    guidance += `fontFamily: '${textChild.basicInfo.text.fontFamily}', `;
-                }
-                if (textChild.basicInfo?.text?.fontSize) {
-                    guidance += `fontSize: ${textChild.basicInfo.text.fontSize}`;
-                }
-                guidance += `)\n`;
+            const textInfo = textChild.basicInfo?.text;
+            if (textInfo) {
+                // Import the generateFlutterTextWidget function result
+                const widgetSuggestion = generateFlutterTextWidget(textInfo);
+                const placeholderNote = textInfo.isPlaceholder ? ' // Placeholder text - replace with actual content' : '';
+                const semanticNote = textInfo.semanticType && textInfo.semanticType !== 'other' ? ` // Detected as ${textInfo.semanticType}` : '';
+
+                guidance += `${index + 1}. "${textInfo.content}"${placeholderNote}${semanticNote}\n`;
+                guidance += `   Flutter Widget:\n`;
+
+                // Indent the widget suggestion
+                const indentedWidget = widgetSuggestion.split('\n').map(line => `   ${line}`).join('\n');
+                guidance += `${indentedWidget}\n\n`;
             } else {
-                guidance += `\n`;
+                guidance += `${index + 1}. Text('${textChild.name}') // No text info available\n\n`;
             }
         });
-        guidance += `\n`;
     }
 
     return guidance;

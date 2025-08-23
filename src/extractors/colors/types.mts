@@ -41,24 +41,6 @@ export type ColorExtractorFn = (
 ) => string[] | null; // Returns color IDs
 
 /**
- * Color extraction result
- */
-export interface ColorExtractionResult {
-    themeColors: ThemeColor[];
-    colorLibrary: ColorDefinition[];
-    totalColors: number;
-}
-
-/**
- * Color extraction options
- */
-export interface ColorExtractionOptions {
-    maxDepth?: number;
-    includeTransparent?: boolean;
-    minUsageCount?: number;
-}
-
-/**
  * Flutter theme generation options
  */
 export interface ThemeGenerationOptions {

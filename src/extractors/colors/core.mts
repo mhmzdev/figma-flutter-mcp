@@ -6,13 +6,9 @@ import type {
     ColorDefinition,
     ColorExtractionContext,
     ColorExtractorFn,
-    ColorExtractionResult,
-    ColorExtractionOptions
 } from './types.mjs';
 import {
     extractColorsFromThemeFrame,
-    fillColorExtractor,
-    strokeColorExtractor
 } from './extractor.mjs';
 
 /**
@@ -27,45 +23,6 @@ export class ColorExtractor {
      */
     extractThemeFromFrame(frameNode: FigmaNode): ThemeColor[] {
         return extractColorsFromThemeFrame(frameNode);
-    }
-
-    /**
-     * Extract colors from entire Figma file with deduplication
-     */
-    extractFromFile(
-        file: {document: FigmaNode},
-        extractors: ColorExtractorFn[] = [fillColorExtractor, strokeColorExtractor],
-        options: ColorExtractionOptions = {}
-    ): ColorExtractionResult {
-        // Reset state
-        this.resetLibraries();
-
-        const context: ColorExtractionContext = {
-            colorMap: this.colorMap,
-            currentDepth: 0,
-            maxDepth: options.maxDepth || 5
-        };
-
-        // Extract colors from all pages
-        if (file.document.children) {
-            file.document.children.forEach(page => {
-                this.extractFromNode(page, extractors, context);
-            });
-        }
-
-        // Filter by minimum usage count if specified
-        let filteredLibrary = this.colorLibrary;
-        if (options.minUsageCount && options.minUsageCount > 1) {
-            filteredLibrary = this.colorLibrary.filter(color => 
-                color.usageCount >= options.minUsageCount!
-            );
-        }
-
-        return {
-            themeColors: [], // Theme colors come from frame extraction
-            colorLibrary: filteredLibrary,
-            totalColors: this.colorLibrary.length
-        };
     }
 
     /**
@@ -204,15 +161,4 @@ export class ColorExtractor {
 export function extractThemeColors(frameNode: FigmaNode): ThemeColor[] {
     const extractor = new ColorExtractor();
     return extractor.extractThemeFromFrame(frameNode);
-}
-
-/**
- * Convenience function to extract design system colors from a file
- */
-export function extractDesignSystemColors(
-    file: {document: FigmaNode},
-    options?: ColorExtractionOptions
-): ColorExtractionResult {
-    const extractor = new ColorExtractor();
-    return extractor.extractFromFile(file, undefined, options);
 }

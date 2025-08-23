@@ -161,14 +161,18 @@ export interface ComponentChild {
 }
 
 /**
- * Text-specific information
+ * Enhanced text-specific information
  */
 export interface TextInfo {
-    content?: string;
+    content: string;
+    isPlaceholder: boolean;
     fontFamily?: string;
     fontSize?: number;
     fontWeight?: number;
     textAlign?: string;
+    textCase?: 'uppercase' | 'lowercase' | 'capitalize' | 'sentence' | 'mixed';
+    semanticType?: 'heading' | 'body' | 'label' | 'button' | 'link' | 'caption' | 'error' | 'success' | 'warning' | 'other';
+    placeholder?: boolean; // Flag for Flutter implementation
 }
 
 /**

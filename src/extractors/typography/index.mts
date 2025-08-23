@@ -1,12 +1,11 @@
 // src/extractors/typography/index.mts
 
 // Core functionality
-export { TypographyExtractor, extractThemeTypography, extractDesignSystemTypography } from './core.mjs';
+export { TypographyExtractor, extractThemeTypography } from './core.mjs';
 
 // Extractor functions
 export {
     extractTypographyFromThemeFrame,
-    textStyleExtractor,
     isTypographyDemoNode
 } from './extractor.mjs';
 
@@ -16,7 +15,6 @@ export type {
     TypographyDefinition,
     TypographyExtractionContext,
     TypographyExtractorFn,
-    TypographyExtractionResult,
     TypographyExtractionOptions,
     TypographyGenerationOptions,
     FontWeightMapping,

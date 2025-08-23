@@ -18,6 +18,18 @@ import {
     generateStructureInspectionReport
 } from "./helpers.mjs";
 
+import {
+    createAssetsDirectory,
+    generateAssetFilename,
+    downloadImage,
+    getFileStats,
+    updatePubspecAssets,
+    generateAssetConstants,
+    groupAssetsByBaseName,
+    type AssetInfo
+} from "../assets/asset-manager.mjs";
+import {join} from 'path';
+
 export function registerComponentTools(server: McpServer) {
 
     // Main component analysis tool
@@ -25,17 +37,19 @@ export function registerComponentTools(server: McpServer) {
         "analyze_figma_component",
         {
             title: "Analyze Figma Component",
-            description: "Analyze a Figma component or component set to extract layout, styling, and structure information for Flutter widget creation",
+            description: "Analyze a Figma component or component set to extract layout, styling, and structure information for Flutter widget creation. Use analyze_full_screen for complete screen layouts.",
             inputSchema: {
                 input: z.string().describe("Figma component URL or file ID"),
                 nodeId: z.string().optional().describe("Node ID (if providing file ID separately)"),
-                userDefinedComponent: z.boolean().optional().describe("Treat as component even if it's a FRAME (default: false)"),
+                userDefinedComponent: z.boolean().optional().describe("Treat a FRAME as a component (when designer hasn't converted to actual component yet) (default: false)"),
                 maxChildNodes: z.number().optional().describe("Maximum child nodes to analyze (default: 10)"),
                 includeVariants: z.boolean().optional().describe("Include variant analysis for component sets (default: true)"),
-                variantSelection: z.array(z.string()).optional().describe("Specific variant names to analyze (if >3 variants)")
+                variantSelection: z.array(z.string()).optional().describe("Specific variant names to analyze (if >3 variants)"),
+                projectPath: z.string().optional().describe("Path to Flutter project for asset export (defaults to current directory)"),
+                exportAssets: z.boolean().optional().describe("Automatically export image assets found in component (default: true)")
             }
         },
-        async ({input, nodeId, userDefinedComponent = false, maxChildNodes = 10, includeVariants = true, variantSelection}) => {
+        async ({input, nodeId, userDefinedComponent = false, maxChildNodes = 10, includeVariants = true, variantSelection, projectPath = process.cwd(), exportAssets = true}) => {
             const token = getFigmaToken();
             if (!token) {
                 return {
@@ -76,6 +90,28 @@ export function registerComponentTools(server: McpServer) {
                             text: `Component with node ID "${parsedInput.nodeId}" not found in file.`
                         }]
                     };
+                }
+
+                // Validate that this is a component or user-defined component
+                const isActualComponent = componentNode.type === 'COMPONENT' || componentNode.type === 'COMPONENT_SET' || componentNode.type === 'INSTANCE';
+                const isUserDefinedFrame = componentNode.type === 'FRAME' && userDefinedComponent;
+                
+                if (!isActualComponent && !isUserDefinedFrame) {
+                    if (componentNode.type === 'FRAME') {
+                        return {
+                            content: [{
+                                type: "text",
+                                text: `Node "${componentNode.name}" is a FRAME. If this should be treated as a component, set userDefinedComponent: true. For analyzing complete screens, use the analyze_full_screen tool instead.`
+                            }]
+                        };
+                    } else {
+                        return {
+                            content: [{
+                                type: "text",
+                                text: `Node "${componentNode.name}" is not a component (type: ${componentNode.type}). For analyzing full screens, use the analyze_full_screen tool instead.`
+                            }]
+                        };
+                    }
                 }
 
                 // Check if this is a component set and handle variants
@@ -133,8 +169,28 @@ export function registerComponentTools(server: McpServer) {
                         componentAnalysis = await componentExtractor.analyzeComponent(componentNode, userDefinedComponent);
                     }
                 } else {
-                    // Regular component or frame
+                    // Regular component, instance, or user-defined frame
                     componentAnalysis = await componentExtractor.analyzeComponent(componentNode, userDefinedComponent);
+                }
+
+                // Detect and export image assets if enabled
+                let assetExportInfo = '';
+                if (exportAssets) {
+                    try {
+                        // Use the existing filterImageNodes logic from assets.mts
+                        const imageNodes = await filterImageNodesInComponent(parsedInput.fileId, [parsedInput.nodeId], figmaService);
+                        if (imageNodes.length > 0) {
+                            const exportedAssets = await exportComponentAssets(
+                                imageNodes,
+                                parsedInput.fileId,
+                                figmaService,
+                                projectPath
+                            );
+                            assetExportInfo = generateAssetExportReport(exportedAssets);
+                        }
+                    } catch (assetError) {
+                        assetExportInfo = `\nAsset Export Warning: ${assetError instanceof Error ? assetError.message : String(assetError)}\n`;
+                    }
                 }
 
                 // Generate analysis report
@@ -148,7 +204,7 @@ export function registerComponentTools(server: McpServer) {
                 return {
                     content: [{
                         type: "text",
-                        text: analysisReport
+                        text: analysisReport + assetExportInfo
                     }]
                 };
 
@@ -253,14 +309,15 @@ export function registerComponentTools(server: McpServer) {
         "inspect_component_structure",
         {
             title: "Inspect Component Structure",
-            description: "Get a quick overview of component structure, children, and nested components",
+            description: "Get a quick overview of component structure, children, and nested components. Use inspect_screen_structure for full screens.",
             inputSchema: {
                 input: z.string().describe("Figma component URL or file ID"),
                 nodeId: z.string().optional().describe("Node ID (if providing file ID separately)"),
+                userDefinedComponent: z.boolean().optional().describe("Treat a FRAME as a component (when designer hasn't converted to actual component yet) (default: false)"),
                 showAllChildren: z.boolean().optional().describe("Show all children regardless of limits (default: false)")
             }
         },
-        async ({input, nodeId, showAllChildren = false}) => {
+        async ({input, nodeId, userDefinedComponent = false, showAllChildren = false}) => {
             const token = getFigmaToken();
             if (!token) {
                 return {
@@ -295,6 +352,28 @@ export function registerComponentTools(server: McpServer) {
                     };
                 }
 
+                // Validate that this is a component or user-defined component
+                const isActualComponent = componentNode.type === 'COMPONENT' || componentNode.type === 'COMPONENT_SET' || componentNode.type === 'INSTANCE';
+                const isUserDefinedFrame = componentNode.type === 'FRAME' && userDefinedComponent;
+                
+                if (!isActualComponent && !isUserDefinedFrame) {
+                    if (componentNode.type === 'FRAME') {
+                        return {
+                            content: [{
+                                type: "text",
+                                text: `Node "${componentNode.name}" is a FRAME. If this should be treated as a component, set userDefinedComponent: true. For inspecting complete screens, use the inspect_screen_structure tool instead.`
+                            }]
+                        };
+                    } else {
+                        return {
+                            content: [{
+                                type: "text",
+                                text: `Node "${componentNode.name}" is not a component (type: ${componentNode.type}). For inspecting full screens, use the inspect_screen_structure tool instead.`
+                            }]
+                        };
+                    }
+                }
+
                 const output = generateStructureInspectionReport(componentNode, showAllChildren);
 
                 return {
@@ -311,4 +390,188 @@ export function registerComponentTools(server: McpServer) {
             }
         }
     );
+}
+
+/**
+ * Filter image nodes within a component - reuses logic from assets.mts
+ */
+async function filterImageNodesInComponent(fileId: string, targetNodeIds: string[], figmaService: FigmaService): Promise<Array<{id: string, name: string, node: any}>> {
+    // Get the full file to access all nodes
+    const file = await figmaService.getFile(fileId);
+
+    // Get the target nodes for boundary checking
+    const targetNodes = await figmaService.getNodes(fileId, targetNodeIds);
+
+    const allNodesWithImages: Array<{id: string, name: string, node: any}> = [];
+
+    function extractImageNodes(node: any, nodeId: string = node.id): void {
+        // Check if this node has image fills
+        if (node.fills && node.fills.some((fill: any) => fill.type === 'IMAGE' && fill.visible !== false)) {
+            allNodesWithImages.push({
+                id: nodeId,
+                name: node.name,
+                node: node
+            });
+        }
+
+        // Check if this is a vector/illustration that should be exported
+        if (node.type === 'VECTOR' && node.name) {
+            const name = node.name.toLowerCase();
+            if ((name.includes('image') || name.includes('illustration') || name.includes('graphic')) &&
+                !name.includes('icon') && !name.includes('button')) {
+                allNodesWithImages.push({
+                    id: nodeId,
+                    name: node.name,
+                    node: node
+                });
+            }
+        }
+
+        // Recursively check children
+        if (node.children) {
+            node.children.forEach((child: any) => {
+                extractImageNodes(child, child.id);
+            });
+        }
+    }
+
+    // Extract from entire file
+    file.document.children?.forEach((page: any) => {
+        extractImageNodes(page);
+    });
+
+    // Filter to only those within our target nodes
+    const imageNodes = allNodesWithImages.filter(imageNode => {
+        return targetNodeIds.some(targetId => {
+            const targetNode = targetNodes[targetId];
+            return targetNode && isNodeWithinTarget(imageNode.node, targetNode);
+        });
+    });
+
+    return imageNodes;
+}
+
+function isNodeWithinTarget(imageNode: any, targetNode: any): boolean {
+    if (!imageNode.absoluteBoundingBox || !targetNode.absoluteBoundingBox) {
+        return false;
+    }
+
+    const imageBounds = imageNode.absoluteBoundingBox;
+    const targetBounds = targetNode.absoluteBoundingBox;
+
+    // Check if image node is within target node bounds
+    return (
+        imageBounds.x >= targetBounds.x &&
+        imageBounds.y >= targetBounds.y &&
+        imageBounds.x + imageBounds.width <= targetBounds.x + targetBounds.width &&
+        imageBounds.y + imageBounds.height <= targetBounds.y + targetBounds.height
+    );
+}
+
+/**
+ * Export component assets to Flutter project
+ */
+async function exportComponentAssets(
+    imageNodes: Array<{id: string, name: string, node: any}>,
+    fileId: string,
+    figmaService: FigmaService,
+    projectPath: string
+): Promise<AssetInfo[]> {
+    if (imageNodes.length === 0) {
+        return [];
+    }
+
+    // Create assets directory structure
+    const assetsDir = await createAssetsDirectory(projectPath);
+    const downloadedAssets: AssetInfo[] = [];
+
+    // Export images at 2x scale (standard for Flutter)
+    const imageUrls = await figmaService.getImageExportUrls(fileId, imageNodes.map(n => n.id), {
+        format: 'png',
+        scale: 2
+    });
+
+    for (const imageNode of imageNodes) {
+        const imageUrl = imageUrls[imageNode.id];
+        if (!imageUrl) continue;
+
+        const filename = generateAssetFilename(imageNode.name, 'png', 2, false);
+        const filepath = join(assetsDir, filename);
+
+        try {
+            // Download the image
+            await downloadImage(imageUrl, filepath);
+
+            // Get file size for reporting
+            const stats = await getFileStats(filepath);
+
+            downloadedAssets.push({
+                nodeId: imageNode.id,
+                nodeName: imageNode.name,
+                filename,
+                path: `assets/images/${filename}`,
+                size: stats.size
+            });
+        } catch (downloadError) {
+            console.warn(`Failed to download image ${imageNode.name}:`, downloadError);
+        }
+    }
+
+    if (downloadedAssets.length > 0) {
+        // Update pubspec.yaml
+        const pubspecPath = join(projectPath, 'pubspec.yaml');
+        await updatePubspecAssets(pubspecPath, downloadedAssets);
+
+        // Generate asset constants file
+        await generateAssetConstants(downloadedAssets, projectPath);
+    }
+
+    return downloadedAssets;
+}
+
+/**
+ * Generate asset export report
+ */
+function generateAssetExportReport(exportedAssets: AssetInfo[]): string {
+    if (exportedAssets.length === 0) {
+        return '';
+    }
+
+    let report = `\n${'='.repeat(50)}\n`;
+    report += `🖼️  AUTOMATIC ASSET EXPORT\n`;
+    report += `${'='.repeat(50)}\n\n`;
+    
+    report += `Found and exported ${exportedAssets.length} image asset(s) from the component:\n\n`;
+
+    // Group by base name for cleaner output
+    const groupedAssets = groupAssetsByBaseName(exportedAssets);
+    Object.entries(groupedAssets).forEach(([baseName, assets]) => {
+        report += `📁 ${baseName}:\n`;
+        assets.forEach(asset => {
+            report += `   • ${asset.filename} (${asset.size})\n`;
+        });
+    });
+
+    report += `\n✅ Assets Configuration:\n`;
+    report += `   • Images saved to: assets/images/\n`;
+    report += `   • pubspec.yaml updated with asset declarations\n`;
+    report += `   • Asset constants generated in: lib/constants/assets.dart\n\n`;
+
+    report += `🚀 Usage in Flutter:\n`;
+    report += `   import 'package:your_app/constants/assets.dart';\n\n`;
+    
+    exportedAssets.forEach(asset => {
+        const constantName = asset.filename
+            .replace(/\.[^/.]+$/, '') // Remove extension
+            .replace(/[^a-zA-Z0-9]/g, '_') // Replace special chars with underscore
+            .replace(/_+/g, '_') // Replace multiple underscores with single
+            .replace(/^_|_$/g, '') // Remove leading/trailing underscores
+            .toLowerCase();
+        
+        report += `   Image.asset(Assets.${constantName}) // ${asset.nodeName}\n`;
+    });
+
+    report += `\n${'='.repeat(50)}\n`;
+
+    return report;
 }
