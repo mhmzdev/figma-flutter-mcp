@@ -2,6 +2,7 @@
 import type {McpServer} from "@modelcontextprotocol/sdk/server/mcp.js";
 import {registerFlutterAssetTools} from "./assets/assets.mjs";
 import {registerSvgAssetTools} from "./assets/svg-assets.mjs";
+import {registerComponentTools} from "./components/component-tool.mjs";
 
 export function registerFlutterTools(server: McpServer) {
     // Register Flutter asset management tools
@@ -9,5 +10,8 @@ export function registerFlutterTools(server: McpServer) {
 
     // Register SVG asset management tools
     registerSvgAssetTools(server);
+
+    // Register component analysis tools
+    registerComponentTools(server);
 }
 
