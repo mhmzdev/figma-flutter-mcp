@@ -1,5 +1,11 @@
 # figma-flutter-mcp
 
+## 0.1.6
+
+### Patch Changes
+
+- [#22](https://github.com/mhmzdev/figma-flutter-mcp/pull/22) [`fffb12a`](https://github.com/mhmzdev/figma-flutter-mcp/commit/fffb12ab10b281f632a6506c5cb5053a039c57e7) Thanks [@mhmzdev](https://github.com/mhmzdev)! - Figma API key logic improved for API access
+
 ## 0.1.5
 
 ### Patch Changes
