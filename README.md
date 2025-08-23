@@ -1,28 +1,84 @@
-# Figma-to-Flutter MCP Server [IN PROGRESS]
+<div align="center">
+  <h1>Figma to Flutter MCP Server [Early]</h1>
+  <h3>Utilize Figma's rich data in your coding agent.<br/>Implement designs in Flutter way!</h3>
+  <a href="https://npmcharts.com/compare/figma-flutter-mcp?interval=30">
+    <img alt="weekly downloads" src="https://img.shields.io/npm/dm/figma-flutter-mcp.svg">
+  </a>
+  <a href="https://github.com/mhmzdev/figma-flutter-mcp/blob/main/LICENSE">
+    <img alt="MIT License" src="https://img.shields.io/github/license/mhmzdev/figma-flutter-mcp" />
+  </a>
+  <a href="https://twitter.com/mhmzdev">
+    <img alt="Twitter" src="https://img.shields.io/twitter/url?url=https%3A%2F%2Fx.com%2Fmhmzdev&label=%40mhmzdev" />
+  </a>
+</div>
+<br>
 
-A comprehensive MCP (Model Context Protocol) server that bridges Figma designs and Flutter development through Cursor AI. This server automatically extracts design information from Figma files and generates organized, production-ready Flutter code with proper project structure.
+Use [Cursor](https://cursor.sh) or other AI-powered tools to access Figma's rich files, data, components and much more using [MCP server](https://modelcontextprotocol.io/).
 
-## 🚀 Features
+## 📝 Early Release
+Since this is my first time building MCP servers so marking this as ‘early,’ which means you might encounter bugs or unexpected behavior. As there's always a room for improvements so you can checkout the [issues](https://github.com/mhmzdev/figma-flutter-mcp/issues) to see what else there's to work or to improve.
 
-- **🎨 Figma API Integration**: Seamlessly fetch files, components, and design data
-- **📱 Smart Flutter Generation**: Creates screens, widgets, and proper project structure
-- **🏗️ Organized Code Structure**: Generates screens in `lib/ui/screens/` and widgets with proper naming conventions
-- **🔒 Private vs Public Widgets**: Automatically determines screen-specific (private) vs global (public) widgets
-- **⚙️ Cursor AI Compatible**: Full integration with Cursor IDE via MCP protocol
-- **🎯 Pixel-Perfect Output**: Maintains design fidelity from Figma to Flutter code
+## 📚 How it works
+1. [Components/Widgets](src/extractors/components/)
+- ✅ Extract Figma node data: Layout, styling, dimensions, colors, text content, etc.
+- ✅ Analyze structure: Child elements, nested components, visual importance
+- ✅ Provide guidance: Suggest Flutter widgets and implementation patterns
+- ❌ NOT generating actual Flutter code files
 
-## 📋 Prerequisites
+2. [Screens](src/extractors/screens/)
+- ✅ Extract screen metadata: Device type, orientation, dimensions
+- ✅ Identify sections: Header, footer, navigation, content areas
+- ✅ Analyze navigation: Tab bars, app bars, drawers, navigation elements
+- ✅ Provide Scaffold guidance: Suggest Flutter screen structure
+- ❌ NOT generating actual Flutter screen
 
-- **Node.js 18+** 
-- **Figma Personal Access Token** ([Get yours here](https://www.figma.com/developers/api#access-tokens))
-- **Cursor AI IDE** with MCP support
-- **Flutter SDK** (for running generated code)
+Since its just helping AI write Flutter code so it means the better your prompt will be the better results you'll get.
 
-## ⚡ Quick Start
+## 🛠️ Usage
+Following steps shows a minimal usage and setup instructions:
 
-### 1. Installation
+### 🔑 Figma API Key
+You will need to create a Figma access token to use this server. Instructions on how to create a Figma API access token can be found [here](https://help.figma.com/hc/en-us/articles/8085703771159-Manage-personal-access-tokens).
 
-```bash
+### 🏹 MCP in Cursor
+Once you've the FIGMA API KEY, you can setup the MCP in cursor as follows:
+1. Press CMD + Shift + P (Ctrl on Windows)
+2. Type "Open MCP Settings"
+3. Click on "Add new MCP"
+4. Paste the below json object
+
+#### MacOS/Linux
+```
+{
+  "mcpServers": {
+    "Figma Flutter MCP": {
+      "command": "npx",
+      "args": ["-y", "figma-flutter-mcp", "--figma-api-key=YOUR-API-KEY", "--stdio"]
+    }
+  }
+}
+```
+#### Windows
+```
+{
+  "mcpServers": {
+    "Figma Flutter MCP": {
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "figma-flutter-mcp", "--figma-api-key=YOUR-API-KEY", "--stdio"]
+    }
+  }
+}
+```
+
+### 🧑🏼‍💻 Local Setup
+#### 0. Prerequisites
+- Node.js 18+
+- Figma API Key (Access Token)
+- Cursor AI IDE with MCP support
+- Flutter SDK
+
+#### 1. Clone the Repo
+```
 # Clone or download the project
 git clone <your-repo-url> figma-flutter-mcp
 cd figma-flutter-mcp
@@ -30,275 +86,126 @@ cd figma-flutter-mcp
 # Install dependencies
 npm install
 ```
-
-### 2. Configuration
-
-Create a `.env` file in the project root:
-
-```env
-FIGMA_FLUTTER_MCP=your_figma_personal_access_token_here
+#### 2. Configure
+Either use `.env` to setup various values. Checkout [.env.example](.env.example)
+#### MacOS/Linux
 ```
+{
+  "mcpServers": {
+    "figma-flutter-mcp": {
+      "command": "node",
+      "args": [
+        "/Path/to/figma-flutter-mcp/dist/server.mjs",
+        "--figma-api-key=YOUR_API_KEY",
+        "--stdio"
+      ]
+    }
+  }
+}
+```
+#### Windows
+```
+{
+  "mcpServers": {
+    "figma-flutter-mcp": {
+      "command": "node",
+      "args": [
+        "/Path/to/figma-flutter-mcp/dist/server.mjs",
+        "--figma-api-key=YOUR_API_KEY",
+        "--stdio"
+      ]
+    }
+  }
+}
+```
+> NOTE: If you want to keep it for only current project then setup the above JSON in `.cursor-mcp/config.json` BUT be mindful about the API_KEY so make sure to put this file in `.gitignore`
 
-**Getting your Figma token:**
-1. Go to [Figma Settings → Personal Access Tokens](https://www.figma.com/developers/api#access-tokens)
-2. Generate a new token
-3. Copy and paste it in your `.env` file
-
-**Configure your Figma file ID:**
-- Edit `figma-config.mjs` in the project root
-- Update the `fileId` value to point to your Figma file
-- All utility scripts (`.mjs` files) will automatically use this central configuration
-
-### 3. Build and Run
-
-```bash
+#### 3. Build & Run
+```
 # Development mode (with auto-restart)
 npm run dev
 
 # Production mode
 npm run build
-npm start
 ```
+You can now verify in MCP settings that the server is running and tools are available.
 
-### 4. Configure Cursor AI
+## 🧱 Basic Workflow
+1. **Setup Theme & Typography**: The most efficient way, put two frames in Figma with Theme colors and Typography samples on it. For instance:
 
-Add to your Cursor MCP configuration:
+![Theme Setup Example](docs/images/theme-frame.png)
+![Typography Setup Example](docs/images/text-style-frame.png)
 
-**Option A: Through Cursor Settings**
-- Open Cursor → Settings → Features → Model Context Protocol
-- Add new server configuration
+- Figma Desktop: Select the frame and press CMD + L or Ctrl + L
+- Figma Web: Select the frame and copy the URL
 
-**Option B: Create `.cursor-mcp/config.json`**
-```json
-{
-  "mcpServers": {
-    "Figma Flutter MCP": {
-      "command": "npx",
-      "args": ["-y", "figma-flutter-mcp", "--figma-api-key=YOUR-KEY", "--stdio"]
-    }
-  }
-}
-```
-
-Alternatively, if running built server directly:
-
-```json
-{
-  "mcpServers": {
-    "figma-flutter": {
-      "command": "node",
-      "args": ["/path/to/your/figma-flutter-mcp/dist/server.js", "--figma-api-key=YOUR-KEY", "--stdio"],
-    }
-  }
-}
-```
-
-Replace `/path/to/your/figma-flutter-mcp` with your actual project path (use `pwd` to find it).
-
-## 🛠️ Usage
-
-### Basic Workflow
-
-1. **Start the server**: `npm run dev`
-2. **Open Cursor AI** and start a chat
-3. **Use natural language** to interact with your Figma designs
-
-### Example Commands (Recommended Usage)
-
-1) Theme & Design Tokens Extraction
-```
-"Extract design tokens from file 83dXk35avf0BTHtYPWeyl7"
-```
-
-2) Component Generation by Node ID
-```
-"Build this button component 1:234 from file 83dXk35avf0BTHtYPWeyl7"
-```
-
-3) Asset Export
-```
-"Export images for nodes 1:234,1:235 from file 83dXk35avf0BTHtYPWeyl7 as png at 2x"
-```
-
-## 🏗️ Generated Project Structure
-
-The MCP server intelligently organizes generated Flutter code:
-
-### Screens (Complete UI Pages)
-```
-lib/ui/screens/welcome/welcome_screen.dart
-lib/ui/screens/login/login_screen.dart
-lib/ui/screens/profile/profile_screen.dart
-```
-
-### Screen-Specific Widgets (Private)
-```
-lib/ui/screens/welcome/widgets/_hero_banner.dart
-lib/ui/screens/login/widgets/_login_form.dart
-lib/ui/screens/profile/widgets/_avatar_section.dart
-```
-
-### Global Widgets (Public/Reusable)
-```
-lib/ui/widgets/custom_button/custom_button.dart
-lib/ui/widgets/post_card/post_card.dart
-lib/ui/widgets/user_avatar/user_avatar.dart
-```
-
-### Naming Conventions
-
-- **Screens**: `ScreenNameScreen` class in `screen_name_screen.dart`
-- **Private Widgets**: `_WidgetName` class in `_widget_name.dart`
-- **Public Widgets**: `WidgetName` class in `widget_name.dart`
-- **File Names**: `snake_case` for files, `PascalCase` for classes
-
-## 🔧 Project Architecture
+> 💡 HINT: The valid URL will contain a FILE ID and NODE ID params
 
 ```
-figma-flutter-mcp/
-├── server.mts                 # Main MCP server entry point
-├── figma-config.mjs          # Centralized Figma file configuration
-├── extract_login_design.mjs  # Utility script for design analysis
-├── get_major_components.mjs  # Utility script for component discovery
-├── get_key_components.mjs    # Utility script for key UI components
-├── types/
-│   └── figma.mts             # Figma API type definitions
-├── services/
-│   └── figma.mts             # Figma API service layer
-├── tools/
-│   ├── index.mts             # Main tools registration
-│   ├── config.mts            # Configuration tools
-│   ├── figma.mts             # Figma-related tools
-│   └── flutter/              # Flutter generation tools
-│       ├── index.mts         # Flutter tools registration
-│       ├── types.mts         # Flutter-specific types
-│       ├── utils.mts         # Utility functions
-│       ├── generators.mts    # Widget code generators
-│       ├── widget-builder.mts # Main widget building logic
-│       └── project-structure.mts # Project structure generation
-├── package.json
-├── tsconfig.json
-├── .env                      # Environment variables
-└── README.md
+"Setup flutter theme from <figma_link> including Colors and Typography.
 ```
 
-## 🧰 Available MCP Tools
+2. **Widget Generation**: The most efficient way, use COMPONENTS in figma. For example:
 
-### Core Tools
-- `extract_design_tokens` - Extract design tokens for Flutter theming
-- `generate_flutter_widget` - Generate Flutter widget from a specific node ID
-- `generate_flutter_project_structure` - Generate complete Flutter project from a page
-- `typescriptexport_node_images` - Export node images for assets
+![Button](docs/images/button.png)
 
-## 🔧 Utility Scripts
-
-The project includes several utility scripts for direct Figma analysis:
-
-### Available Scripts
-```bash
-# Analyze login screen design in detail
-node extract_login_design.mjs
-
-# Discover all major components in the file
-node get_major_components.mjs
-
-# Find key UI components for quick reference
-node get_key_components.mjs
+This one has 8 variants, you may prompt whether you want to have variants or not.
 ```
-
-**Configuration:** All scripts use the centralized `figma-config.mjs` file for the Figma file ID. Update the `fileId` in that file to switch between different Figma files.
-
-## 🎯 Smart Widget Detection
-
-The server automatically categorizes Figma components:
-
-### Screen Detection
-Identifies complete screens by keywords: `screen`, `page`, `view`, `welcome`, `login`, `register`, `feed`, `profile`, `chat`, `home`, `settings`
-
-### Global Widget Detection  
-Identifies reusable components by keywords: `button`, `component`, `card`, `input`, `header`, `footer`, `navbar`, `dialog`, `modal`
-
-### Everything Else
-Components not matching screen or global widget patterns are treated as screen-specific widgets.
-
-## 📚 Example Usage Scenarios
-
-### Scenario 1: New Flutter Project from Figma
+"Create this widget in flutter <figma_link>, setup only 2 variants for now and break the files in smaller parts for code readability.
 ```
-"I have a Figma file for a social media app. Generate a complete Flutter project structure with all screens and components organized properly."
+If you **do not** have COMPONENTS in figma, you can use FRAME just prompt the AI that you want this to be a widget and it will handle the rest.
+
+3. **Full Screen Generation**: If there are any IMAGE ASSETS available, it will export them and put them in `assets/` along with `pubspec.yaml`
 ```
-
-### Scenario 2: Single Component Update
+"Create full screen from this figma link <figma_link>, ensure the code is readable by having smaller files
 ```
-"The login button design changed in Figma. Generate just the Flutter code for node ID 1:456."
+4. **Assets Export**:
+- Image Assets: Will work automatically when generating screens
 ```
-
-### Scenario 3: Design System Components
+"Export this image asset from figma <figma_link>
 ```
-"Extract all the reusable UI components from my Figma design system and generate Flutter widgets."
+- SVG Assets: Will NOT work automatically, explained below.
 ```
-
-## 🔍 Troubleshooting
-
-### Server Not Responding
-1. Ensure `npm run dev` is running
-2. Check if `.env` file exists with valid token
-3. Verify Cursor MCP configuration path is correct
-
-### Figma API Errors
-1. Verify your Figma token is provided via `--figma-api-key` or `FIGMA_FLUTTER_MCP`
-2. Ensure the Figma file ID is correct
-3. Check if you have access to the Figma file
-
-### Generated Code Issues
-1. Review the Figma component structure
-2. Check if component names follow valid naming conventions
-3. Ensure components have proper styling information
-
-### MCP Connection Issues
-1. Restart Cursor AI
-2. Rebuild the project: `npm run build`
-3. Check the terminal for server error messages
-
-## 🚀 Production Deployment
-
-For always-running server (optional):
-
-### Using PM2
-```bash
-npm install -g pm2
-npm run build
-pm2 start dist/server.js --name figma-flutter-mcp
-pm2 save
+"Export this as an SVG asset from Figma: <figma_link>
 ```
+#### ⚠️ Why SVG assets don’t work with screen generation
+clarify that vectors include icons and pen-tool shapes, so bulk exports may grab unintended nodes; recommend exporting SVGs separately. This process still saves you a lot of time by exporting them in your `assets/svg/` directory and updating your `pubspec.yaml`.
 
-### Using System Service
-Create systemd service (Linux) or launchd (macOS) for automatic startup.
+## 🧰 MCP Tools
+Assets related:
+- `export_flutter_assets`: Individual tool for image assets used with Screen generation
+- `export_svg_flutter_assets`: Individual tool for SVG assets export
 
-## 🤝 Contributing
+Widget related:
+- `analyze_figma_component`: For type=COMPONENT in figma or FRAME prompted by user
+- `list_component_variants`: For type=COMPONENT_SET in figma (Widget variants)
+- `inspect_component_structure`: For nested COMPONENTS or FRAMES
 
-1. Fork the repository
-2. Create your feature branch: `git checkout -b feature/amazing-feature`
-3. Commit your changes: `git commit -m 'Add amazing feature'`
-4. Push to the branch: `git push origin feature/amazing-feature`
-5. Open a Pull Request
+Full screen related:
+- `analyze_full_screen`: type=FRAME for full screen and assets export (image only)
+- `inspect_screen_structure`: For layouts and other information for building screen
 
-## 📄 License
+## ⚠️ Disclaimers
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+- **Early release**: It's the [first version](https://github.com/mhmzdev/figma-flutter-mcp?tab=readme-ov-file#-early-release) release, so you might have some bugs or mis-behaviour please bear with me, I'm learning 🥲
+- **Contribution**: Developers who wants to look into code might see some repetitions and redundancies, I'll be removing them gradually.
+- **Figma API usage**: All tools in this server call the official Figma REST API using your personal access token. Actions like analyzing components/screens and exporting assets result in API requests to Figma on your behalf.
+- **Rate limiting**: Heavy usage may trigger Figma rate limits (e.g., HTTP 429). The server includes retry with backoff, but it does not bypass Figma limits. If you encounter rate limits, wait a few minutes and reduce the request volume.
+- **Tips to avoid limits**:
+  - Analyze one component or one screen at a time instead of large batches.
+  - Use figma links to frames/components/nodes; avoid scanning entire pages.
+  - Space out repeated commands; avoid rapid-fire calls in quick succession.
+  - For asset exports, only export required nodes; avoid `includeMultipleResolutions` unless needed and keep `scale` reasonable.
+- **Security**: Keep your Figma token secret. Prefer `.env` and do not commit keys or machine-specific MCP configs to source control.
+- **Compliance**: Use the Figma API in accordance with Figma’s Terms. Ensure you have access rights to the files you request.
 
-## 🙏 Acknowledgments
+## 🙌🏼 Acknowledgments
+I came across [Figma Context MCP](https://github.com/GLips/Figma-Context-MCP) by [Graham Lipsman](https://x.com/glipsman) that sparks this motivation for me to develop Figma to Flutter explicitly having features like:
+- Assets exports
+- Colors and Theme setups
+- Widget tree and full screen building
 
-- Built with [Model Context Protocol (MCP)](https://modelcontextprotocol.io/)
-- Powered by [Figma API](https://www.figma.com/developers/api)
-- Designed for [Cursor AI](https://cursor.sh/)
-- Generates [Flutter](https://flutter.dev/) code
-
-## 📞 Support
-
-- **Issues**: [GitHub Issues](https://github.com/yourusername/figma-flutter-mcp/issues)
-- **Documentation**: [MCP Documentation](https://modelcontextprotocol.io/docs)
-- **Figma API**: [Figma Developer Docs](https://www.figma.com/developers/api)
+Others coming soon...
 
 ## 🔑 License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE.md) file for details
