@@ -51,7 +51,7 @@ export function registerScreenTools(server: McpServer) {
                 return {
                     content: [{
                         type: "text",
-                        text: "Error: Figma access token not configured. Please set FIGMA_FLUTTER_MCP environment variable."
+                        text: "Error: Figma access token not configured. Please set FIGMA_API_KEY environment variable."
                     }]
                 };
             }
