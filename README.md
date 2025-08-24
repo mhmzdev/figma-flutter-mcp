@@ -19,8 +19,11 @@
 
 Use [Cursor](https://cursor.sh) or other AI-powered tools to access Figma's rich files, data, components and much more using [MCP server](https://modelcontextprotocol.io/).
 
-## 📝 First Release
-Since this is my first time building MCP servers which means you might encounter bugs or unexpected behavior. As there's always a room for improvements so you can checkout the [issues](https://github.com/mhmzdev/figma-flutter-mcp/issues) to see what else there's to work or to improve.
+## 🎥 [Video Demo](https://youtu.be/o_GezwAlXlU)
+Showcased almost all the features of Figma Flutter MCP with real figma design.
+
+## 📝 [Getting Started](docs/getting-started.md)
+You may explore the detailed [getting started](docs/getting-started.md) docs or the [demo video](https://youtu.be/o_GezwAlXlU) as quick-start. As its a First Release hence there's a lot of room for improvements so you can checkout the [issues](https://github.com/mhmzdev/figma-flutter-mcp/issues) to see what else there's to work or to improve.
 
 ## 📚 How it works
 1. [Components/Widgets](src/extractors/components/)
@@ -195,7 +198,7 @@ Full screen related:
 
 ## ⚠️ Disclaimers
 
-- **Early release**: It's the [first version](https://github.com/mhmzdev/figma-flutter-mcp?tab=readme-ov-file#-early-release) release, so you might have some bugs or mis-behaviour please bear with me, I'm learning 🥲
+- **Early release**: It's the [first version](https://github.com/mhmzdev/figma-flutter-mcp?tab=readme-ov-file#-getting-started) release, so you might have some bugs or mis-behaviour please bear with me, I'm learning 🥲
 - **Contribution**: Developers who wants to look into code might see some repetitions and redundancies, I'll be removing them gradually.
 - **Figma API usage**: All tools in this server call the official Figma REST API using your personal access token. Actions like analyzing components/screens and exporting assets result in API requests to Figma on your behalf.
 - **Rate limiting**: Heavy usage may trigger Figma rate limits (e.g., HTTP 429). The server includes retry with backoff, but it does not bypass Figma limits. If you encounter rate limits, wait a few minutes and reduce the request volume.
