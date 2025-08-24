@@ -20,7 +20,7 @@
 Use [Cursor](https://cursor.sh) or other AI-powered tools to access Figma's rich files, data, components and much more using [MCP server](https://modelcontextprotocol.io/).
 
 ## 🎥 [Video Demo](https://youtu.be/o_GezwAlXlU)
-Showcased almost all the features of Figma Flutter MCP with real figma design.
+[Showcased](https://youtu.be/o_GezwAlXlU) almost all the features of Figma Flutter MCP with real figma design.
 
 ## 📝 [Getting Started](docs/getting-started.md)
 You may explore the detailed [getting started](docs/getting-started.md) docs or the [demo video](https://youtu.be/o_GezwAlXlU) as quick-start. As its a First Release hence there's a lot of room for improvements so you can checkout the [issues](https://github.com/mhmzdev/figma-flutter-mcp/issues) to see what else there's to work or to improve.
