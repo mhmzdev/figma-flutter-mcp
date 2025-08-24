@@ -198,6 +198,8 @@ Full screen related:
 
 ## ⚠️ Disclaimers
 
+- **Figma Design**: Since we're using Figma's API to fetch the node and its details, so the better design you have the more better it will interpret for the AI to consume i.e. auto layouts, frame usage over group usage, consistently aligned across the board.
+- **Use Case**: At this stage, its highly recommend to NOT use it to develop scalable apps rather try and play it with MVPs, smaller and explanatory tasks.
 - **Early release**: It's the [first version](https://github.com/mhmzdev/figma-flutter-mcp?tab=readme-ov-file#-getting-started) release, so you might have some bugs or mis-behaviour please bear with me, I'm learning 🥲
 - **Contribution**: Developers who wants to look into code might see some repetitions and redundancies, I'll be removing them gradually.
 - **Figma API usage**: All tools in this server call the official Figma REST API using your personal access token. Actions like analyzing components/screens and exporting assets result in API requests to Figma on your behalf.

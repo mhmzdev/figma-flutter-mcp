@@ -59,6 +59,9 @@ First, you'll need a Figma access token:
 
 ---
 
+## ⚠️ Important Note
+As you'll follow through we are NOT generating Flutter Code, we're actually letting AI do that for us. So, keyword here would be "Good Prompt". The more informative your prompt is, the better the results will be. Of course, there's always a room for improvement in MCP itself but when it comes to implementation in Flutter, its all up to AI (Cursor in this case).
+
 ## 🎨 Setting Up Theme Colors
 
 The most efficient way to generate Flutter themes is to create a dedicated theme frame in Figma.
