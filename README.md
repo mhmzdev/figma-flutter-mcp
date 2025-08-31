@@ -24,13 +24,13 @@ Use [Cursor](https://cursor.sh) or other AI-powered tools to access Figma's rich
 - [🎥 Video Demo](#-video-demo)
 - [📝 Getting Started](#-getting-started)
 - [📚 How it works](#-how-it-works--details-here)
+- [🤖 AI Coding Agent Assistance](#-ai-coding-agent-assistance)
 - [🛠️ Usage](#-usage)
   - [🔑 Figma API Key](#-figma-api-key)
   - [🏹 MCP in Cursor](#-mcp-in-cursor)
   - [🧑🏼‍💻 Local Setup](#-local-setup)
 - [🧱 Basic Workflow](#-basic-workflow)
   - [⚠️ Why SVG assets don’t work with screen generation](#️-why-svg-assets-dont-work-with-screen-generation)
-- [🤖 AI Coding Agent Assistance](#-ai-coding-agent-assistance)
 - [🧰 MCP Tools](#-mcp-tools)
 - [⚠️ Disclaimers](#-disclaimers)
 - [🙌🏼 Acknowledgments](#-acknowledgments)
@@ -61,6 +61,14 @@ You may explore the detailed [getting started](docs/getting-started.md) docs or 
 - ❌ NOT generating actual Flutter screen
 
 Since its just helping AI write Flutter code so it means the better your prompt will be the better results you'll get.
+
+### 🤖 AI Coding Agent Assistance
+For better results you can setup some instructions in following files as per your AI Coding Agent:
+- Cursor: `.cursor/rules/fluttering.mdc`
+- Claude: `CLAUDE.md`
+- Gemini CLI: `GEMINI.md`
+
+This way your AI agent will use the MCP's output and ensure the flutter code is as per your project requirements and structure. You can checkout an example of [cursor rules](docs/cursor_rules_example.md) that I used for testing this out.
 
 ## 🛠️ Usage
 Following steps shows a minimal usage and setup instructions:
@@ -202,15 +210,6 @@ If you **do not** have COMPONENTS in figma, you can use FRAME just prompt the AI
 ```
 #### ⚠️ Why SVG assets don’t work with screen generation
 clarify that vectors include icons and pen-tool shapes, so bulk exports may grab unintended nodes; recommend exporting SVGs separately. This process still saves you a lot of time by exporting them in your `assets/svg/` directory and updating your `pubspec.yaml`.
-
-### 🤖 AI Coding Agent Assistance
-For better results you can setup some instructions in following files as per your AI Coding Agent:
-- Cursor: `.cursor/rules/fluttering.mdc`
-- Claude: `CLAUDE.md`
-- Gemini CLI: `GEMINI.md`
-
-This way your AI agent will use the MCP's output and ensure the flutter code is as per your project requirements and structure. You can checkout an example of [cursor rules](docs/cursor_rules_example.md) that I used for testing this out.
-
 
 ## 🧰 MCP Tools
 Assets related:
