@@ -19,6 +19,27 @@
 
 Use [Cursor](https://cursor.sh) or other AI-powered tools to access Figma's rich files, data, components and much more using [MCP server](https://modelcontextprotocol.io/).
 
+## 📋 Table of Contents
+
+- [🎥 Video Demo](#-video-demo)
+- [📝 Getting Started](#-getting-started)
+- [📚 How it works](#-how-it-works--details-here)
+- [🛠️ Usage](#-usage)
+  - [🔑 Figma API Key](#-figma-api-key)
+  - [🏹 MCP in Cursor](#-mcp-in-cursor)
+  - [🧑🏼‍💻 Local Setup](#-local-setup)
+- [🧱 Basic Workflow](#-basic-workflow)
+  - [⚠️ Why SVG assets don’t work with screen generation](#️-why-svg-assets-dont-work-with-screen-generation)
+- [🤖 AI Coding Agent Assistance](#-ai-coding-agent-assistance)
+- [🧰 MCP Tools](#-mcp-tools)
+- [⚠️ Disclaimers](#-disclaimers)
+- [🙌🏼 Acknowledgments](#-acknowledgments)
+- [🧱 Other framworks](#-other-framworks)
+- [🔑 License](#-license)
+- [🙋‍♂️ Author](#-author)
+  - [Muhammad Hamza](#muhammad-hamza)
+
+
 ## 🎥 [Video Demo](https://youtu.be/o_GezwAlXlU)
 [Showcased](https://youtu.be/o_GezwAlXlU) almost all the features of Figma Flutter MCP with real figma design.
 
@@ -181,6 +202,15 @@ If you **do not** have COMPONENTS in figma, you can use FRAME just prompt the AI
 ```
 #### ⚠️ Why SVG assets don’t work with screen generation
 clarify that vectors include icons and pen-tool shapes, so bulk exports may grab unintended nodes; recommend exporting SVGs separately. This process still saves you a lot of time by exporting them in your `assets/svg/` directory and updating your `pubspec.yaml`.
+
+### 🤖 AI Coding Agent Assistance
+For better results you can setup some instructions in following files as per your AI Coding Agent:
+- Cursor: `.cursor/rules/fluttering.mdc`
+- Claude: `CLAUDE.md`
+- Gemini CLI: `GEMINI.md`
+
+This way your AI agent will use the MCP's output and ensure the flutter code is as per your project requirements and structure. You can checkout an example of [cursor rules](docs/cursor_rules_example.md) that I used for testing this out.
+
 
 ## 🧰 MCP Tools
 Assets related:
