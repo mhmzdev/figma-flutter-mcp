@@ -216,6 +216,11 @@ I came across [Figma Context MCP](https://github.com/GLips/Figma-Context-MCP) by
 
 Others coming soon...
 
+## 🧱 Other framworks
+If you want to develop this for React, Angular, React Native, Vue or any other framework. I've added a detailed doc [Figma Framework MCP](docs/figma-framework-mcp.md) that you can explore and get started. Meanwhile I'll maintain a list here if someone's already doing this for framework specific Figma's MCP servers.
+- ...
+- ...
+
 ## 🔑 License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE.md) file for details
 
