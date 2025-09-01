@@ -4,6 +4,13 @@
   <br>
 
   <h1>Figma to Flutter MCP Server</h1>
+   <p>
+    🌐 Available in:
+    <a href="README.ko.md">한국어 (Korean)</a> |
+    <a href="README.ja.md">日本語 (Japanese)</a> |
+    <a href="README.zh-cn.md">简体中文 (Simplified Chinese)</a> |
+    <a href="README.zh-tw.md">繁體中文 (Traditional Chinese)</a>
+  </p>
   <h3>Utilize Figma's rich data in your coding agent.<br/>Implement designs in Flutter way!</h3>
   <a href="https://npmcharts.com/compare/figma-flutter-mcp?interval=30">
     <img alt="weekly downloads" src="https://img.shields.io/npm/dm/figma-flutter-mcp.svg">
