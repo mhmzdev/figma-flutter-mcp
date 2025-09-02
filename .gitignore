@@ -4,3 +4,4 @@ package-lock.json
 dist/
 output/
 reports/
+.cursor/

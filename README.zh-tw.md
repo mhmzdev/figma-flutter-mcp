@@ -24,12 +24,12 @@
 - [🎥 影片示範](#-影片示範)
 - [📝 開始使用](#-開始使用)
 - [📚 運作原理](#-運作原理--詳情請見)
-- [🤖 AI 程式代理協助](#-ai-程式代理協助)
 - [🛠️ 使用方式](#-使用方式)
   - [🔑 Figma API 金鑰](#-figma-api-金鑰)
   - [🏹 Cursor 中的 MCP](#-cursor-中的-mcp)
-  - [🧑🏼‍💻 本機設定](#-本機設定)
+  - [🚀 本機測試快速開始](#-本機測試快速開始)
 - [🧱 基本工作流程](#-基本工作流程)
+  - [🤖 AI 程式代理協助](#-ai-程式代理協助)
   - [⚠️ 為什麼 SVG 資源無法在螢幕產生時運作](#-為什麼-svg-資源無法在螢幕產生時運作)
 - [🧰 MCP 工具](#-mcp-工具)
 - [⚠️ 免責聲明](#-免責聲明)
@@ -63,14 +63,6 @@
 - ❌ 不會產生實際的 Flutter 畫面
 
 此專案旨在協助 AI 撰寫 Flutter 程式碼，因此，**更好的提示會帶來更好的結果**。
-
-### 🤖 AI 程式代理協助
-為獲得更佳結果，你可依所使用的 AI 程式代理，在以下檔案中設定指引：
-- Cursor: `.cursor/rules/fluttering.mdc`
-- Claude: `CLAUDE.md`
-- Gemini CLI: `GEMINI.md`
-
-如此一來，AI 代理能運用 MCP 的輸出，確保 Flutter 程式碼符合你的專案需求與結構。你也可以參考測試時使用的 [Cursor 規則範例](docs/cursor_rules_example.md)。
 
 ## 🛠️ 使用方式
 以下步驟示範最小化的使用與設定方式：
@@ -110,7 +102,7 @@
 
 > 注意：若你已將此 MCP 以 `npm` 套件安裝，請確保維持最新版本。有時舊版本會被快取，導致持續出現「無法使用工具呼叫」或「Figma API 金鑰設定無效」等錯誤。
 
-### 🧑🏼‍💻 本機設定
+### 🚀 本機測試快速開始
 在本機開發時，請確保版本與本機伺服器一致。有時 `npm i` 會把伺服器安裝為全域，導致覆寫本機變更，使你看不到更新。
 
 #### 0. 先決條件
@@ -173,6 +165,14 @@ npm run build
 你現在可以在 MCP 設定中確認伺服器是否正在運作，以及工具是否可用。
 
 ## 🧱 基本工作流程
+### 🤖 AI 程式代理協助
+為獲得更佳結果，你可依所使用的 AI 程式代理，在以下檔案中設定指引：
+- Cursor: `.cursor/rules/fluttering.mdc`
+- Claude: `CLAUDE.md`
+- Gemini CLI: `GEMINI.md`
+
+如此一來，AI 代理能運用 MCP 的輸出，確保 Flutter 程式碼符合你的專案需求與結構。你也可以參考測試時使用的 [Cursor 規則範例](docs/cursor_rules_example.md)。
+
 1. **設定主題與字體樣式**：最有效的方式是在 Figma 中放置兩個畫框，內含主題色彩與字體樣式範例。例如：
 
 ![主題設定範例](docs/images/theme-frame.png)
@@ -231,13 +231,7 @@ npm run build
 
 - **Figma 設計**：我們使用 Figma API 擷取節點與其詳細資訊；因此若你使用自動版面、優先使用畫框而非群組、並在整體上保持一致性，結果會更佳。
 - **使用情境**：目前強烈建議不要用於開發可擴充的大型應用程式，而是用於 MVP、小型與說明性任務。
-- **早期發佈**：這是[第一個版本](https://github.com/mhmzdev/figma-flutter-mcp?tab=readme-ov-file#-getting-started)，可能存在一些錯誤或異常行為，敬請見諒 🥲
 - **速率限制**：高強度使用可能觸發 Figma 速率限制（如 HTTP 429）。伺服器包含帶退避的重試機制，但無法繞過 Figma 限制。若遇到限制，請等待數分鐘並降低請求頻率。
-- **避免觸發限制的小撇步**：
-  - 一次分析一個元件或一個畫面，避免大量批次請求。
-  - 使用指向畫框/元件/節點的 Figma 連結，避免掃描整個頁面。
-  - 避免快速連續呼叫，請拉開時間間隔。
-  - 匯出資源時僅匯出必要節點；僅在需要時使用 `includeMultipleResolutions`，並維持合理的 `scale`。
 
 ## 🙌🏼 致謝
 我受到 [Graham Lipsman](https://x.com/glipsman) 的 [Figma Context MCP](https://github.com/GLips/Figma-Context-MCP) 啟發，因而開發了專為 Flutter 的 Figma MCP，具備以下特色：

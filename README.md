@@ -31,13 +31,13 @@ Use [Cursor](https://cursor.sh) or other AI-powered tools to access Figma's rich
 - [🎥 Video Demo](#-video-demo)
 - [📝 Getting Started](#-getting-started)
 - [📚 How it works](#-how-it-works--details-here)
-- [🤖 AI Coding Agent Assistance](#-ai-coding-agent-assistance)
 - [🛠️ Usage](#-usage)
   - [🔑 Figma API Key](#-figma-api-key)
   - [🏹 MCP in Cursor](#-mcp-in-cursor)
-  - [🧑🏼‍💻 Local Setup](#-local-setup)
+  - [🚀 Quick Start for Local Testing](#-quick-start-for-local-testing)
 - [🧱 Basic Workflow](#-basic-workflow)
-  - [⚠️ Why SVG assets don’t work with screen generation](#️-why-svg-assets-dont-work-with-screen-generation)
+  - [🤖 AI Coding Agent Assistance](#-ai-coding-agent-assistance)
+  - [⚠️ Why SVG assets don't work with screen generation](#️-why-svg-assets-dont-work-with-screen-generation)
 - [🧰 MCP Tools](#-mcp-tools)
 - [⚠️ Disclaimers](#-disclaimers)
 - [🙌🏼 Acknowledgments](#-acknowledgments)
@@ -70,14 +70,6 @@ You may explore the detailed [getting started](docs/getting-started.md) docs or 
 - ❌ NOT generating actual Flutter screen
 
 Since its just helping AI write Flutter code so it means the better your prompt will be the better results you'll get.
-
-### 🤖 AI Coding Agent Assistance
-For better results you can setup some instructions in following files as per your AI Coding Agent:
-- Cursor: `.cursor/rules/fluttering.mdc`
-- Claude: `CLAUDE.md`
-- Gemini CLI: `GEMINI.md`
-
-This way your AI agent will use the MCP's output and ensure the flutter code is as per your project requirements and structure. You can checkout an example of [cursor rules](docs/cursor_rules_example.md) that I used for testing this out.
 
 ## 🛠️ Usage
 Following steps shows a minimal usage and setup instructions:
@@ -120,6 +112,13 @@ Once you've the FIGMA API KEY, you can setup the MCP in cursor as follows:
 
 ### 🚀 Quick Start for Local Testing
 
+#### Prerequisites
+- Node.js 18+
+- Figma API Key (Access Token)
+- Cursor AI IDE with MCP support
+- Flutter SDK
+
+
 For quick local testing, you can run the server via HTTP instead of stdio:
 
 ```bash
@@ -149,66 +148,15 @@ Then add this to your MCP client configuration:
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed instructions.
 
-#### 0. Prerequisites
-- Node.js 18+
-- Figma API Key (Access Token)
-- Cursor AI IDE with MCP support
-- Flutter SDK
-
-#### 1. Clone the Repo
-```
-# Clone or download the project
-git clone <your-repo-url> figma-flutter-mcp
-cd figma-flutter-mcp
-
-# Install dependencies
-npm install
-```
-#### 2. Configure
-Either use `.env` to setup various values. Checkout [.env.example](.env.example)
-#### MacOS/Linux
-```
-{
-  "mcpServers": {
-    "figma-flutter-mcp": {
-      "command": "node",
-      "args": [
-        "/Path/to/figma-flutter-mcp/dist/server.mjs",
-        "--figma-api-key=YOUR_API_KEY",
-        "--stdio"
-      ]
-    }
-  }
-}
-```
-#### Windows
-```
-{
-  "mcpServers": {
-    "figma-flutter-mcp": {
-      "command": "node",
-      "args": [
-        "/Path/to/figma-flutter-mcp/dist/server.mjs",
-        "--figma-api-key=YOUR_API_KEY",
-        "--stdio"
-      ]
-    }
-  }
-}
-```
-> NOTE: If you want to keep it for only current project then setup the above JSON in `.cursor-mcp/config.json` BUT be mindful about the API_KEY so make sure to put this file in `.gitignore`
-
-#### 3. Build & Run
-```
-# Development mode (with auto-restart)
-npm run dev
-
-# Production mode
-npm run build
-```
-You can now verify in MCP settings that the server is running and tools are available.
-
 ## 🧱 Basic Workflow
+### 🤖 AI Coding Agent Assistance
+For better results you can setup some instructions in following files as per your AI Coding Agent:
+- Cursor: `.cursor/rules/fluttering.mdc`
+- Claude: `CLAUDE.md`
+- Gemini CLI: `GEMINI.md`
+
+This way your AI agent will use the MCP's output and ensure the flutter code is as per your project requirements and structure. You can checkout an example of [cursor rules](docs/cursor_rules_example.md) that I used for testing this out.
+
 1. **Setup Theme & Typography**: The most efficient way, put two frames in Figma with Theme colors and Typography samples on it. For instance:
 
 ![Theme Setup Example](docs/images/theme-frame.png)
@@ -267,13 +215,7 @@ Full screen related:
 
 - **Figma Design**: Since we're using Figma's API to fetch the node and its details, so the better design you have the more better it will interpret for the AI to consume i.e. auto layouts, frame usage over group usage, consistently aligned across the board.
 - **Use Case**: At this stage, its highly recommend to NOT use it to develop scalable apps rather try and play it with MVPs, smaller and explanatory tasks.
-- **Early release**: It's the [first version](https://github.com/mhmzdev/figma-flutter-mcp?tab=readme-ov-file#-getting-started) release, so you might have some bugs or mis-behaviour please bear with me, I'm learning 🥲
 - **Rate limiting**: Heavy usage may trigger Figma rate limits (e.g., HTTP 429). The server includes retry with backoff, but it does not bypass Figma limits. If you encounter rate limits, wait a few minutes and reduce the request volume.
-- **Tips to avoid limits**:
-  - Analyze one component or one screen at a time instead of large batches.
-  - Use figma links to frames/components/nodes; avoid scanning entire pages.
-  - Space out repeated commands; avoid rapid-fire calls in quick succession.
-  - For asset exports, only export required nodes; avoid `includeMultipleResolutions` unless needed and keep `scale` reasonable.
 
 ## 🙌🏼 Acknowledgments
 I came across [Figma Context MCP](https://github.com/GLips/Figma-Context-MCP) by [Graham Lipsman](https://x.com/glipsman) that sparks this motivation for me to develop Figma to Flutter explicitly having features like:
