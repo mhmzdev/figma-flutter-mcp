@@ -8,14 +8,23 @@ import {
     VariantAnalyzer,
     parseComponentInput,
     type ComponentAnalysis,
-    type ComponentVariant
+    type ComponentVariant,
+    DeduplicatedComponentExtractor,
+    type DeduplicatedComponentAnalysis
 } from "../../../extractors/components/index.mjs";
+import {FlutterStyleLibrary} from "../../../extractors/flutter/style-library.mjs";
 
 import {
     generateVariantSelectionPrompt,
     generateComponentAnalysisReport,
     generateStructureInspectionReport
 } from "./helpers.mjs";
+import {
+    generateDeduplicatedReport,
+    generateFlutterImplementation,
+    generateComprehensiveDeduplicatedReport,
+    generateStyleLibraryReport
+} from "./deduplicated-helpers.mjs";
 
 import {
     createAssetsDirectory,
@@ -45,10 +54,13 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
                 includeVariants: z.boolean().optional().describe("Include variant analysis for component sets (default: true)"),
                 variantSelection: z.array(z.string()).optional().describe("Specific variant names to analyze (if >3 variants)"),
                 projectPath: z.string().optional().describe("Path to Flutter project for asset export (defaults to current directory)"),
-                exportAssets: z.boolean().optional().describe("Automatically export image assets found in component (default: true)")
+                exportAssets: z.boolean().optional().describe("Automatically export image assets found in component (default: true)"),
+                useDeduplication: z.boolean().optional().describe("Use style deduplication for token efficiency (default: true)"),
+                generateFlutterCode: z.boolean().optional().describe("Generate full Flutter implementation code (default: false)"),
+                resetStyleLibrary: z.boolean().optional().describe("Reset style library before analysis (default: false)")
             }
         },
-        async ({input, nodeId, userDefinedComponent = false, maxChildNodes = 10, includeVariants = true, variantSelection, projectPath = process.cwd(), exportAssets = true}) => {
+        async ({input, nodeId, userDefinedComponent = false, maxChildNodes = 10, includeVariants = true, variantSelection, projectPath = process.cwd(), exportAssets = true, useDeduplication = true, generateFlutterCode = false, resetStyleLibrary = false}) => {
             const token = figmaApiKey;
             if (!token) {
                 return {
@@ -60,6 +72,11 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
             }
 
             try {
+                // Reset style library if requested
+                if (resetStyleLibrary) {
+                    FlutterStyleLibrary.getInstance().reset();
+                }
+
                 // Parse input to get file ID and node ID
                 const parsedInput = parseComponentInput(input, nodeId);
 
@@ -73,11 +90,6 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
                 }
 
                 const figmaService = new FigmaService(token);
-                const componentExtractor = new ComponentExtractor({
-                    maxChildNodes,
-                    extractTextContent: true,
-                    prioritizeComponents: true
-                });
 
                 // Get the component node
                 const componentNode = await figmaService.getNode(parsedInput.fileId, parsedInput.nodeId);
@@ -155,21 +167,64 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
                 }
 
                 // Analyze the main component
-                let componentAnalysis: ComponentAnalysis;
+                let analysisReport: string;
 
-                if (componentNode.type === 'COMPONENT_SET') {
-                    // For component sets, analyze the default variant or first selected variant
-                    const targetVariant = selectedVariants.find(v => v.isDefault) || selectedVariants[0];
-                    if (targetVariant) {
-                        const variantNode = await figmaService.getNode(parsedInput.fileId, targetVariant.nodeId);
-                        componentAnalysis = await componentExtractor.analyzeComponent(variantNode, userDefinedComponent);
+                if (useDeduplication) {
+                    // Use deduplicated extractor
+                    const deduplicatedExtractor = new DeduplicatedComponentExtractor();
+                    let deduplicatedAnalysis: DeduplicatedComponentAnalysis;
+
+                    if (componentNode.type === 'COMPONENT_SET') {
+                        // For component sets, analyze the default variant or first selected variant
+                        const targetVariant = selectedVariants.find(v => v.isDefault) || selectedVariants[0];
+                        if (targetVariant) {
+                            const variantNode = await figmaService.getNode(parsedInput.fileId, targetVariant.nodeId);
+                            deduplicatedAnalysis = await deduplicatedExtractor.analyzeComponent(variantNode, true);
+                        } else {
+                            // Fallback to analyzing the component set itself
+                            deduplicatedAnalysis = await deduplicatedExtractor.analyzeComponent(componentNode, true);
+                        }
                     } else {
-                        // Fallback to analyzing the component set itself
-                        componentAnalysis = await componentExtractor.analyzeComponent(componentNode, userDefinedComponent);
+                        // Regular component, instance, or user-defined frame
+                        deduplicatedAnalysis = await deduplicatedExtractor.analyzeComponent(componentNode, true);
+                    }
+
+                    analysisReport = generateComprehensiveDeduplicatedReport(deduplicatedAnalysis, true);
+                    
+                    if (generateFlutterCode) {
+                        analysisReport += "\n\n" + generateFlutterImplementation(deduplicatedAnalysis);
                     }
                 } else {
-                    // Regular component, instance, or user-defined frame
-                    componentAnalysis = await componentExtractor.analyzeComponent(componentNode, userDefinedComponent);
+                    // Use original extractor
+                    const componentExtractor = new ComponentExtractor({
+                        maxChildNodes,
+                        extractTextContent: true,
+                        prioritizeComponents: true
+                    });
+                    
+                    let componentAnalysis: ComponentAnalysis;
+
+                    if (componentNode.type === 'COMPONENT_SET') {
+                        // For component sets, analyze the default variant or first selected variant
+                        const targetVariant = selectedVariants.find(v => v.isDefault) || selectedVariants[0];
+                        if (targetVariant) {
+                            const variantNode = await figmaService.getNode(parsedInput.fileId, targetVariant.nodeId);
+                            componentAnalysis = await componentExtractor.analyzeComponent(variantNode, userDefinedComponent);
+                        } else {
+                            // Fallback to analyzing the component set itself
+                            componentAnalysis = await componentExtractor.analyzeComponent(componentNode, userDefinedComponent);
+                        }
+                    } else {
+                        // Regular component, instance, or user-defined frame
+                        componentAnalysis = await componentExtractor.analyzeComponent(componentNode, userDefinedComponent);
+                    }
+
+                    analysisReport = generateComponentAnalysisReport(
+                        componentAnalysis,
+                        variantAnalysis,
+                        selectedVariants,
+                        parsedInput
+                    );
                 }
 
                 // Detect and export image assets if enabled
@@ -191,14 +246,6 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
                         assetExportInfo = `\nAsset Export Warning: ${assetError instanceof Error ? assetError.message : String(assetError)}\n`;
                     }
                 }
-
-                // Generate analysis report
-                const analysisReport = generateComponentAnalysisReport(
-                    componentAnalysis,
-                    variantAnalysis,
-                    selectedVariants,
-                    parsedInput
-                );
 
                 return {
                     content: [{
@@ -389,6 +436,103 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
             }
         }
     );
+
+    // Dedicated Flutter code generation tool
+    server.registerTool(
+        "generate_flutter_implementation",
+        {
+            title: "Generate Flutter Implementation",
+            description: "Generate complete Flutter widget code using cached style definitions",
+            inputSchema: {
+                componentNodeId: z.string().describe("Node ID of the analyzed component"),
+                includeStyleDefinitions: z.boolean().optional().describe("Include style definitions in output (default: true)"),
+                widgetName: z.string().optional().describe("Custom widget class name")
+            }
+        },
+        async ({ componentNodeId, includeStyleDefinitions = true, widgetName }) => {
+            try {
+                const styleLibrary = FlutterStyleLibrary.getInstance();
+                const styles = styleLibrary.getAllStyles();
+                
+                let output = "🏗️  Flutter Implementation\n";
+                output += `${'='.repeat(50)}\n\n`;
+                
+                if (includeStyleDefinitions && styles.length > 0) {
+                    output += "📋 Style Definitions:\n";
+                    output += `${'─'.repeat(30)}\n`;
+                    styles.forEach(style => {
+                        output += `// ${style.id} (${style.category}, used ${style.usageCount} times)\n`;
+                        output += `final ${style.id} = ${style.flutterCode};\n\n`;
+                    });
+                    output += "\n";
+                } else if (styles.length === 0) {
+                    output += "⚠️  No cached styles found. Please analyze a component first.\n\n";
+                }
+                
+                output += generateWidgetClass(componentNodeId, widgetName || 'CustomWidget', styles);
+                
+                // Add usage summary
+                if (styles.length > 0) {
+                    output += "\n\n📊 Style Library Summary:\n";
+                    output += `${'─'.repeat(30)}\n`;
+                    output += `• Total unique styles: ${styles.length}\n`;
+                    
+                    const categoryStats = styles.reduce((acc, style) => {
+                        acc[style.category] = (acc[style.category] || 0) + 1;
+                        return acc;
+                    }, {} as Record<string, number>);
+                    
+                    Object.entries(categoryStats).forEach(([category, count]) => {
+                        output += `• ${category}: ${count} style(s)\n`;
+                    });
+                    
+                    const totalUsage = styles.reduce((sum, style) => sum + style.usageCount, 0);
+                    output += `• Total style usage: ${totalUsage}\n`;
+                    const efficiency = styles.length > 0 ? ((totalUsage - styles.length) / totalUsage * 100).toFixed(1) : '0.0';
+                    output += `• Deduplication efficiency: ${efficiency}% reduction\n`;
+                }
+                
+                return {
+                    content: [{ type: "text", text: output }]
+                };
+                
+            } catch (error) {
+                return {
+                    content: [{
+                        type: "text",
+                        text: `Error generating Flutter implementation: ${error instanceof Error ? error.message : String(error)}`
+                    }]
+                };
+            }
+        }
+    );
+
+    // Style library status tool
+    server.registerTool(
+        "style_library_status",
+        {
+            title: "Style Library Status",
+            description: "Get comprehensive status report of the cached style library",
+            inputSchema: {}
+        },
+        async () => {
+            try {
+                const report = generateStyleLibraryReport();
+                
+                return {
+                    content: [{ type: "text", text: report }]
+                };
+                
+            } catch (error) {
+                return {
+                    content: [{
+                        type: "text",
+                        text: `Error generating style library report: ${error instanceof Error ? error.message : String(error)}`
+                    }]
+                };
+            }
+        }
+    );
 }
 
 /**
@@ -562,10 +706,12 @@ function generateAssetExportReport(exportedAssets: AssetInfo[]): string {
     exportedAssets.forEach(asset => {
         const constantName = asset.filename
             .replace(/\.[^/.]+$/, '') // Remove extension
-            .replace(/[^a-zA-Z0-9]/g, '_') // Replace special chars with underscore
-            .replace(/_+/g, '_') // Replace multiple underscores with single
-            .replace(/^_|_$/g, '') // Remove leading/trailing underscores
-            .toLowerCase();
+            .replace(/[^a-zA-Z0-9]/g, ' ') // Replace special chars with space
+            .replace(/\s+/g, ' ') // Replace multiple spaces with single
+            .trim()
+            .split(' ')
+            .map((word, index) => index === 0 ? word.toLowerCase() : word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+            .join('');
         
         report += `   Image.asset(Assets.${constantName}) // ${asset.nodeName}\n`;
     });
@@ -573,4 +719,91 @@ function generateAssetExportReport(exportedAssets: AssetInfo[]): string {
     report += `\n${'='.repeat(50)}\n`;
 
     return report;
+}
+
+
+/**
+ * Generate widget class implementation
+ */
+function generateWidgetClass(componentNodeId: string, widgetName: string, styles: Array<any>): string {
+    let output = `🎯 Widget Implementation:\n`;
+    output += `${'─'.repeat(30)}\n`;
+    output += `class ${widgetName} extends StatelessWidget {\n`;
+    output += `  const ${widgetName}({Key? key}) : super(key: key);\n\n`;
+    output += `  @override\n`;
+    output += `  Widget build(BuildContext context) {\n`;
+
+    // Find relevant styles for this component
+    const decorationStyles = styles.filter(s => s.category === 'decoration');
+    const paddingStyles = styles.filter(s => s.category === 'padding');
+    const textStyles = styles.filter(s => s.category === 'text');
+
+    if (decorationStyles.length > 0 || paddingStyles.length > 0) {
+        output += `    return Container(\n`;
+        
+        // Add decoration if available
+        if (decorationStyles.length > 0) {
+            const decorationStyle = decorationStyles[0]; // Use first decoration style
+            output += `      decoration: ${decorationStyle.id},\n`;
+        }
+        
+        // Add padding if available
+        if (paddingStyles.length > 0) {
+            const paddingStyle = paddingStyles[0]; // Use first padding style
+            output += `      padding: ${paddingStyle.id},\n`;
+        }
+        
+        // Add child content
+        if (textStyles.length > 0) {
+            const textStyle = textStyles[0]; // Use first text style
+            output += `      child: Text(\n`;
+            output += `        'Sample Text', // TODO: Replace with actual content\n`;
+            output += `        style: ${textStyle.id},\n`;
+            output += `      ),\n`;
+        } else {
+            output += `      child: Column(\n`;
+            output += `        children: [\n`;
+            output += `          // TODO: Add your widget content here\n`;
+            output += `          Text('Component Content'),\n`;
+            output += `        ],\n`;
+            output += `      ),\n`;
+        }
+        
+        output += `    );\n`;
+    } else if (textStyles.length > 0) {
+        // Just a text widget if only text styles are available
+        const textStyle = textStyles[0];
+        output += `    return Text(\n`;
+        output += `      'Sample Text', // TODO: Replace with actual content\n`;
+        output += `      style: ${textStyle.id},\n`;
+        output += `    );\n`;
+    } else {
+        // Fallback for when no cached styles are available
+        output += `    return Container(\n`;
+        output += `      // TODO: Implement widget using component node ID: ${componentNodeId}\n`;
+        output += `      // No cached styles found - please analyze a component first\n`;
+        output += `      child: Text('Widget Placeholder'),\n`;
+        output += `    );\n`;
+    }
+
+    output += `  }\n`;
+    output += `}\n`;
+
+    // Add usage instructions
+    output += `\n💡 Usage Instructions:\n`;
+    output += `${'─'.repeat(30)}\n`;
+    output += `1. Import this widget in your Flutter app\n`;
+    output += `2. Replace 'Sample Text' with actual content\n`;
+    output += `3. Customize the widget structure as needed\n`;
+    output += `4. Add any missing properties or methods\n\n`;
+
+    if (styles.length > 0) {
+        output += `📦 Available Style References:\n`;
+        output += `${'─'.repeat(30)}\n`;
+        styles.forEach(style => {
+            output += `• ${style.id} (${style.category})\n`;
+        });
+    }
+
+    return output;
 }
