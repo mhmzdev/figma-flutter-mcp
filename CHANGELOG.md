@@ -1,5 +1,11 @@
 # figma-flutter-mcp
 
+## 0.2.0
+
+### Minor Changes
+
+- [#33](https://github.com/mhmzdev/figma-flutter-mcp/pull/33) [`990dfc6`](https://github.com/mhmzdev/figma-flutter-mcp/commit/990dfc6070a64131182df9371ad94b7d5fb114ab) Thanks [@mhmzdev](https://github.com/mhmzdev)! - Break-even point: ~22 component analyses
+
 ## 0.1.8
 
 ### Patch Changes
