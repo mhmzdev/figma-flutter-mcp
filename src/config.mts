@@ -7,10 +7,14 @@ export interface ServerConfig {
     figmaApiKey: string;
     outputFormat: "yaml" | "json";
     isStdioMode: boolean;
+    isHttpMode: boolean;
+    httpPort: number;
     configSources: {
         figmaApiKey: "cli" | "env";
         envFile: "cli" | "default";
         stdio: "cli" | "env" | "default";
+        http: "cli" | "env" | "default";
+        port: "cli" | "env" | "default";
     };
 }
 
@@ -23,6 +27,8 @@ interface CliArgs {
     "figma-api-key"?: string;
     env?: string;
     stdio?: boolean;
+    http?: boolean;
+    port?: number;
 }
 
 export function getServerConfig(): ServerConfig {
@@ -41,6 +47,16 @@ export function getServerConfig(): ServerConfig {
                 type: "boolean",
                 description: "Run in stdio mode for MCP client communication",
                 default: false,
+            },
+            http: {
+                type: "boolean",
+                description: "Run in HTTP mode for local testing",
+                default: false,
+            },
+            port: {
+                type: "number",
+                description: "Port number for HTTP server",
+                default: 3333,
             },
         })
         .help()
@@ -66,10 +82,14 @@ export function getServerConfig(): ServerConfig {
         figmaApiKey: "",
         outputFormat: "json",
         isStdioMode: false,
+        isHttpMode: false,
+        httpPort: 3333,
         configSources: {
             figmaApiKey: "env",
             envFile: envFileSource,
             stdio: "default",
+            http: "default",
+            port: "default",
         },
     };
 
@@ -91,6 +111,24 @@ export function getServerConfig(): ServerConfig {
         config.configSources.stdio = "env";
     }
 
+    // Handle HTTP mode
+    if (argv.http) {
+        config.isHttpMode = true;
+        config.configSources.http = "cli";
+    } else if (process.env.HTTP_MODE === "true") {
+        config.isHttpMode = true;
+        config.configSources.http = "env";
+    }
+
+    // Handle port configuration
+    if (argv.port) {
+        config.httpPort = argv.port;
+        config.configSources.port = "cli";
+    } else if (process.env.HTTP_PORT) {
+        config.httpPort = parseInt(process.env.HTTP_PORT, 10);
+        config.configSources.port = "env";
+    }
+
     // Validate configuration
     if (!config.figmaApiKey) {
         console.error("Error: FIGMA_API_KEY is required (via CLI argument or .env file)");
@@ -105,6 +143,10 @@ export function getServerConfig(): ServerConfig {
             `- FIGMA_API_KEY: ${maskApiKey(config.figmaApiKey)} (source: ${config.configSources.figmaApiKey})`
         );
         console.log(`- STDIO_MODE: ${config.isStdioMode} (source: ${config.configSources.stdio})`);
+        console.log(`- HTTP_MODE: ${config.isHttpMode} (source: ${config.configSources.http})`);
+        if (config.isHttpMode) {
+            console.log(`- HTTP_PORT: ${config.httpPort} (source: ${config.configSources.port})`);
+        }
         console.log(); // Empty line for better readability
     }
 
