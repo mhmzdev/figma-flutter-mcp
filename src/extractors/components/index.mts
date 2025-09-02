@@ -31,6 +31,13 @@ export {
 
 export {VariantAnalyzer} from './variant-analyzer.mjs';
 
+// Deduplicated extractor
+export {
+    DeduplicatedComponentExtractor,
+    type DeduplicatedComponentAnalysis,
+    type DeduplicatedComponentChild
+} from './deduplicated-extractor.mjs';
+
 // Types
 export type {
     ComponentAnalysis,

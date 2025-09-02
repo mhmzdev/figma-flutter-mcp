@@ -117,8 +117,37 @@ Once you've the FIGMA API KEY, you can setup the MCP in cursor as follows:
 
 > NOTE: If you've installed this MCP as `npm` package make sure to keep it updated to latest version. Sometimes, it caches the old version and keep showing you error like "Not being able to use tool call" or "Figma API key setup is not working" etc.
 
-### 🧑🏼‍💻 Local Setup
-Please ensure that in local setup your version remains updated with your local server, sometimes `npm i` has installed the server globally for you and the keeps on overriding your local changes because of which you might not see any update.
+
+### 🚀 Quick Start for Local Testing
+
+For quick local testing, you can run the server via HTTP instead of stdio:
+
+```bash
+# Clone and setup
+git clone <your-repo-url> figma-flutter-mcp
+cd figma-flutter-mcp
+npm install
+
+# Create .env file with your Figma API key
+echo "FIGMA_API_KEY=your-figma-api-key-here" > .env
+
+# Start HTTP server for local testing
+npm run dev
+```
+
+Then add this to your MCP client configuration:
+
+```json
+{
+  "mcpServers": {
+    "local-figma-flutter": {
+      "url": "http://localhost:3333/mcp"
+    }
+  }
+}
+```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed instructions.
 
 #### 0. Prerequisites
 - Node.js 18+
