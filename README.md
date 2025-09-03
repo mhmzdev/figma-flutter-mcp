@@ -195,21 +195,7 @@ If you **do not** have COMPONENTS in figma, you can use FRAME just prompt the AI
 "Export this as an SVG asset from Figma: <figma_link>
 ```
 #### ⚠️ Why SVG assets don’t work with screen generation
-clarify that vectors include icons and pen-tool shapes, so bulk exports may grab unintended nodes; recommend exporting SVGs separately. This process still saves you a lot of time by exporting them in your `assets/svg/` directory and updating your `pubspec.yaml`.
-
-## 🧰 MCP Tools
-Assets related:
-- `export_flutter_assets`: Individual tool for image assets used with Screen generation
-- `export_svg_flutter_assets`: Individual tool for SVG assets export
-
-Widget related:
-- `analyze_figma_component`: For type=COMPONENT in figma or FRAME prompted by user
-- `list_component_variants`: For type=COMPONENT_SET in figma (Widget variants)
-- `inspect_component_structure`: For nested COMPONENTS or FRAMES
-
-Full screen related:
-- `analyze_full_screen`: type=FRAME for full screen and assets export (image only)
-- `inspect_screen_structure`: For layouts and other information for building screen
+In Figma vectors include icons and pen-tool shapes, so bulk exports may grab unintended nodes; recommend exporting SVGs separately. This process still saves you a lot of time by exporting them in your `assets/svg/` directory and updating your `pubspec.yaml`.
 
 ## ⚠️ Disclaimers
 
