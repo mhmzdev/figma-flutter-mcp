@@ -6,3 +6,4 @@ output/
 reports/
 .cursor/
 prompts/
+*.DS_STORE
