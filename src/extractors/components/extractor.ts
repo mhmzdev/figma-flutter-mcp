@@ -16,6 +16,7 @@ import type {
     TextInfo,
     ComponentExtractionOptions
 } from './types.js';
+import { detectSemanticTypeAdvanced, generateSemanticContext } from '../../tools/flutter/semantic-detection.js';
 
 /**
  * Extract component metadata
@@ -163,7 +164,9 @@ export function analyzeChildren(
                 nestedComponents.push(createNestedComponentInfo(child));
             }
 
-            children.push(createComponentChild(child, importance, isComponent, options));
+            // Pass parent and siblings for better semantic detection
+            const siblings = visibleChildren.filter(sibling => sibling.id !== child.id);
+            children.push(createComponentChild(child, importance, isComponent, options, node, siblings));
         } else {
             // Track skipped nodes
             skippedNodes.push({
@@ -200,7 +203,9 @@ export function createComponentChild(
     node: FigmaNode,
     importance: number,
     isNestedComponent: boolean,
-    options: Required<ComponentExtractionOptions>
+    options: Required<ComponentExtractionOptions>,
+    parent?: FigmaNode,
+    siblings?: FigmaNode[]
 ): ComponentChild {
     const child: ComponentChild = {
         nodeId: node.id,
@@ -219,7 +224,7 @@ export function createComponentChild(
 
         // Extract text info for text nodes
         if (node.type === 'TEXT' && options.extractTextContent) {
-            child.basicInfo.text = extractTextInfo(node);
+            child.basicInfo.text = extractTextInfo(node, parent, siblings);
         }
     }
 
@@ -439,7 +444,7 @@ export function extractBasicStyling(node: FigmaNode): Partial<StylingInfo> {
 /**
  * Extract enhanced text information
  */
-export function extractTextInfo(node: FigmaNode): TextInfo | undefined {
+export function extractTextInfo(node: FigmaNode, parent?: FigmaNode, siblings?: FigmaNode[]): TextInfo | undefined {
     if (node.type !== 'TEXT') return undefined;
 
     const textContent = getActualTextContent(node);
@@ -453,7 +458,7 @@ export function extractTextInfo(node: FigmaNode): TextInfo | undefined {
         fontWeight: node.style?.fontWeight,
         textAlign: node.style?.textAlignHorizontal,
         textCase: detectTextCase(textContent),
-        semanticType: detectSemanticType(textContent, node.name),
+        semanticType: detectSemanticType(textContent, node.name, node, parent, siblings),
         placeholder: isPlaceholder
     };
 }
@@ -670,15 +675,51 @@ function detectTextCase(content: string): 'uppercase' | 'lowercase' | 'capitaliz
 
 /**
  * Detect semantic type of text based on content and context
+ * Enhanced with multi-factor analysis and confidence scoring
  */
-function detectSemanticType(content: string, nodeName: string): 'heading' | 'body' | 'label' | 'button' | 'link' | 'caption' | 'error' | 'success' | 'warning' | 'other' {
-    const lowerContent = content.toLowerCase().trim();
-    const lowerNodeName = nodeName.toLowerCase();
-
+function detectSemanticType(
+    content: string, 
+    nodeName: string, 
+    node?: any, 
+    parent?: any, 
+    siblings?: any[]
+): 'heading' | 'body' | 'label' | 'button' | 'link' | 'caption' | 'error' | 'success' | 'warning' | 'other' {
     // Skip detection for placeholder text
     if (isPlaceholderText(content)) {
         return 'other';
     }
+
+    // Use advanced semantic detection if node properties are available
+    if (node) {
+        try {
+            const context = generateSemanticContext(node, parent, siblings);
+            const classification = detectSemanticTypeAdvanced(content, nodeName, context, node);
+            
+            // Only use advanced classification if confidence is high enough
+            if (classification.confidence >= 0.6) {
+                return classification.type;
+            }
+            
+            // Log reasoning for debugging (in development)
+            if (process.env.NODE_ENV === 'development') {
+                console.debug(`Low confidence (${classification.confidence}) for "${content}": ${classification.reasoning.join(', ')}`);
+            }
+        } catch (error) {
+            // Fall back to legacy detection if advanced detection fails
+            console.warn('Advanced semantic detection failed, using legacy method:', error);
+        }
+    }
+
+    // Legacy detection as fallback
+    return detectSemanticTypeLegacy(content, nodeName);
+}
+
+/**
+ * Legacy semantic type detection (fallback)
+ */
+function detectSemanticTypeLegacy(content: string, nodeName: string): 'heading' | 'body' | 'label' | 'button' | 'link' | 'caption' | 'error' | 'success' | 'warning' | 'other' {
+    const lowerContent = content.toLowerCase().trim();
+    const lowerNodeName = nodeName.toLowerCase();
 
     // Button text patterns - exact matches for common button labels
     const buttonPatterns = [

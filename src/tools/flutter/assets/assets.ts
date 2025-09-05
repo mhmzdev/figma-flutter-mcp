@@ -136,12 +136,9 @@ export function registerFlutterAssetTools(server: McpServer, figmaApiKey: string
     );
 }
 
-// Helper functions for filtering image nodes (Figma-specific logic)
+// OPTIMIZED: Helper functions for filtering image nodes - only searches within target nodes
 async function filterImageNodes(fileId: string, targetNodeIds: string[], figmaService: any): Promise<Array<{id: string, name: string, node: any}>> {
-    // Get the full file to access all nodes
-    const file = await figmaService.getFile(fileId);
-
-    // Get the target nodes for boundary checking
+    // OPTIMIZED: Only get the target nodes instead of the entire file (massive performance improvement)
     const targetNodes = await figmaService.getNodes(fileId, targetNodeIds);
 
     const allNodesWithImages: Array<{id: string, name: string, node: any}> = [];
@@ -177,38 +174,17 @@ async function filterImageNodes(fileId: string, targetNodeIds: string[], figmaSe
         }
     }
 
-    // Extract from entire file
-    file.document.children?.forEach((page: any) => {
-        extractImageNodes(page);
+    // OPTIMIZED: Extract only from target nodes instead of entire file
+    // This eliminates the need for expensive boundary checking since we only search within target nodes
+    Object.values(targetNodes).forEach((node: any) => {
+        extractImageNodes(node);
     });
 
-    // Filter to only those within our target nodes
-    const imageNodes = allNodesWithImages.filter(imageNode => {
-        return targetNodeIds.some(targetId => {
-            const targetNode = targetNodes[targetId];
-            return targetNode && isNodeWithinTarget(imageNode.node, targetNode);
-        });
-    });
-
-    return imageNodes;
+    // OPTIMIZED: No filtering needed since we only searched within target nodes
+    return allNodesWithImages;
 }
 
-function isNodeWithinTarget(imageNode: any, targetNode: any): boolean {
-    if (!imageNode.absoluteBoundingBox || !targetNode.absoluteBoundingBox) {
-        return false;
-    }
-
-    const imageBounds = imageNode.absoluteBoundingBox;
-    const targetBounds = targetNode.absoluteBoundingBox;
-
-    // Check if image node is within target node bounds
-    return (
-        imageBounds.x >= targetBounds.x &&
-        imageBounds.y >= targetBounds.y &&
-        imageBounds.x + imageBounds.width <= targetBounds.x + targetBounds.width &&
-        imageBounds.y + imageBounds.height <= targetBounds.y + targetBounds.height
-    );
-}
+// REMOVED: isNodeWithinTarget function no longer needed since we only search within target nodes
 
 function toCamelCase(str: string): string {
     return str

@@ -1,6 +1,7 @@
 import type {ComponentVariant} from "../../../extractors/components/types.js";
 import type {ComponentAnalysis} from "../../../extractors/components/types.js";
 import {generateFlutterTextWidget} from "../../../extractors/components/extractor.js";
+import {generateComponentVisualContext} from "../visual-context.js";
 
 /**
  * Generate variant selection prompt when there are more than 3 variants
@@ -208,6 +209,14 @@ export function generateComponentAnalysisReport(
             output += `${index + 1}. ${skipped.name} (${skipped.type})\n`;
         });
         output += `\nTo analyze all nodes, increase the maxChildNodes parameter.\n\n`;
+    }
+
+    // Visual context for AI implementation
+    if (parsedInput?.source === 'url') {
+        // Reconstruct the Figma URL from the parsed input
+        const figmaUrl = `https://www.figma.com/design/${parsedInput.fileId}/?node-id=${parsedInput.nodeId}`;
+        output += generateComponentVisualContext(analysis, figmaUrl, parsedInput.nodeId);
+        output += `\n`;
     }
 
     // Flutter implementation guidance

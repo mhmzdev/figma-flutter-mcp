@@ -21,6 +21,7 @@ import {
     calculateVisualImportance,
     isComponentNode
 } from '../components/extractor.js';
+import { detectSectionTypeAdvanced } from '../../tools/flutter/semantic-detection.js';
 
 /**
  * Extract screen metadata
@@ -100,11 +101,14 @@ export function analyzeScreenSections(
     });
 
     // Analyze each child as potential section
-    const sectionsWithImportance = visibleChildren.map(child => ({
-        node: child,
-        importance: calculateSectionImportance(child),
-        sectionType: detectSectionType(child)
-    }));
+    const sectionsWithImportance = visibleChildren.map(child => {
+        const siblings = visibleChildren.filter(sibling => sibling.id !== child.id);
+        return {
+            node: child,
+            importance: calculateSectionImportance(child),
+            sectionType: detectSectionType(child, node, siblings)
+        };
+    });
 
     // Sort by importance
     sectionsWithImportance.sort((a, b) => b.importance - a.importance);
@@ -193,13 +197,15 @@ function createScreenSection(
                 components.push(createNestedComponentInfo(child));
             }
 
+            // Pass parent and siblings for better semantic detection
+            const siblings = visibleChildren.filter(sibling => sibling.id !== child.id);
             children.push(createComponentChild(child, childImportance, isComponent, {
                 maxChildNodes: 20, // Higher limit for screens
                 maxDepth: options.maxDepth,
                 includeHiddenNodes: options.includeHiddenNodes,
                 prioritizeComponents: true,
                 extractTextContent: true
-            }));
+            }, node, siblings));
         });
     }
 
@@ -247,8 +253,35 @@ function calculateSectionImportance(node: FigmaNode): number {
 
 /**
  * Detect section type based on node properties
+ * Enhanced with multi-factor analysis and confidence scoring
  */
-function detectSectionType(node: FigmaNode): ScreenSection['type'] {
+function detectSectionType(node: FigmaNode, parent?: FigmaNode, siblings?: FigmaNode[]): ScreenSection['type'] {
+    // Try advanced detection first
+    try {
+        const classification = detectSectionTypeAdvanced(node, parent, siblings);
+        
+        // Use advanced classification if confidence is high enough
+        if (classification.confidence >= 0.6) {
+            return classification.type as ScreenSection['type'];
+        }
+        
+        // Log reasoning for debugging (in development)
+        if (process.env.NODE_ENV === 'development') {
+            console.debug(`Low confidence (${classification.confidence}) for section "${node.name}": ${classification.reasoning.join(', ')}`);
+        }
+    } catch (error) {
+        // Fall back to legacy detection if advanced detection fails
+        console.warn('Advanced section detection failed, using legacy method:', error);
+    }
+
+    // Legacy detection as fallback
+    return detectSectionTypeLegacy(node);
+}
+
+/**
+ * Legacy section type detection (fallback)
+ */
+function detectSectionTypeLegacy(node: FigmaNode): ScreenSection['type'] {
     const name = node.name.toLowerCase();
     const bounds = node.absoluteBoundingBox;
 

@@ -1,6 +1,7 @@
 // src/tools/flutter/screens/helpers.mts
 
 import type {ScreenAnalysis, ScreenSection, NavigationElement, ScreenAssetInfo} from "../../../extractors/screens/types.js";
+import {generateScreenVisualContext} from "../visual-context.js";
 
 /**
  * Generate comprehensive screen analysis report
@@ -140,6 +141,14 @@ export function generateScreenAnalysisReport(
             output += `\nTo analyze all sections, increase the maxSections parameter.\n`;
         }
         
+        output += `\n`;
+    }
+
+    // Visual context for AI implementation
+    if (parsedInput?.source === 'url') {
+        // Reconstruct the Figma URL from the parsed input
+        const figmaUrl = `https://www.figma.com/design/${parsedInput.fileId}/?node-id=${parsedInput.nodeId}`;
+        output += generateScreenVisualContext(analysis, figmaUrl, parsedInput.nodeId);
         output += `\n`;
     }
 

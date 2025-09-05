@@ -2,6 +2,8 @@
 
 import type { DeduplicatedComponentAnalysis } from '../../../extractors/components/deduplicated-extractor.js';
 import { FlutterStyleLibrary } from '../../../extractors/flutter/style-library.js';
+import { generateComponentVisualContext } from '../visual-context.js';
+import type { ComponentAnalysis } from '../../../extractors/components/types.js';
 
 export function generateDeduplicatedReport(analysis: DeduplicatedComponentAnalysis): string {
   let output = `Component Analysis (Deduplicated)\n\n`;
@@ -233,6 +235,73 @@ export function generateComprehensiveDeduplicatedReport(
   output += `   • Avoid functional widgets - use proper StatelessWidget classes\n`;
 
   return output;
+}
+
+/**
+ * Add visual context to comprehensive deduplicated report
+ */
+export function addVisualContextToDeduplicatedReport(
+  analysis: DeduplicatedComponentAnalysis,
+  figmaUrl?: string,
+  nodeId?: string
+): string {
+  // Convert deduplicated analysis to component analysis format for visual context
+  const componentAnalysis: ComponentAnalysis = {
+    metadata: analysis.metadata,
+    layout: {
+      type: 'auto-layout', // Default assumption
+      dimensions: { width: 400, height: 200 }, // Default dimensions
+      direction: 'vertical',
+      spacing: undefined,
+      padding: undefined,
+      alignItems: undefined,
+      justifyContent: undefined
+    },
+    styling: {
+      fills: [],
+      strokes: [],
+      cornerRadius: undefined,
+      opacity: 1,
+      effects: { dropShadows: [], innerShadows: [], blurs: [] }
+    },
+    children: analysis.children.map((child, index) => ({
+      name: child.name,
+      type: child.type,
+      nodeId: `node_${index}`,
+      isNestedComponent: false,
+      visualImportance: 5,
+      basicInfo: {
+        layout: { 
+          type: 'auto-layout',
+          dimensions: { width: 100, height: 50 },
+          direction: 'vertical'
+        },
+        styling: { 
+          fills: [], 
+          strokes: [], 
+          opacity: 1,
+          effects: { dropShadows: [], innerShadows: [], blurs: [] }
+        },
+        text: child.textContent ? {
+          content: child.textContent,
+          isPlaceholder: false,
+          fontFamily: undefined,
+          fontSize: undefined,
+          fontWeight: undefined,
+          textCase: 'mixed' as const,
+          semanticType: (child.semanticType === 'button' || child.semanticType === 'link' || 
+                       child.semanticType === 'heading' || child.semanticType === 'body' ||
+                       child.semanticType === 'label' || child.semanticType === 'caption' ||
+                       child.semanticType === 'error' || child.semanticType === 'success' ||
+                       child.semanticType === 'warning') ? child.semanticType : 'other' as const
+        } : undefined
+      }
+    })),
+    nestedComponents: analysis.nestedComponents,
+    skippedNodes: []
+  };
+
+  return generateComponentVisualContext(componentAnalysis, figmaUrl, nodeId);
 }
 
 /**

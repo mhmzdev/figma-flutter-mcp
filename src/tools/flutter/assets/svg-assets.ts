@@ -9,8 +9,8 @@ import {
     downloadImage,
     getFileStats,
     updatePubspecAssets,
-    generateSvgAssetConstants,
-    type AssetInfo
+    type AssetInfo,
+    generateSvgAssetConstants
 } from "./asset-manager.js";
 
 export function registerSvgAssetTools(server: McpServer, figmaApiKey: string) {

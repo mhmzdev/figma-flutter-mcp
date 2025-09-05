@@ -1,6 +1,6 @@
 // services/figma.mts
 import fetch from 'node-fetch';
-import type {FigmaFile, FigmaNode, FigmaFileInfo, FigmaPageInfo, NodeResponse, PageResponse} from '../types/figma.js';
+import type {FigmaNode, NodeResponse} from '../types/figma.js';
 import {
     FigmaError,
     FigmaAuthError,
@@ -86,30 +86,6 @@ export class FigmaService {
             initialDelayMs: 1000,
             maxDelayMs: 10000
         });
-    }
-
-    /**
-     * Get complete Figma file data
-     */
-    async getFile(fileId: string): Promise<FigmaFile> {
-        if (!fileId || fileId.trim().length === 0) {
-            throw new FigmaError('File ID is required', 'INVALID_INPUT');
-        }
-
-        try {
-            const data = await this.makeRequest<FigmaFile>(`/files/${fileId}`);
-
-            if (!data.document || !data.name) {
-                throw new FigmaParseError('Invalid file structure received from Figma API', data);
-            }
-
-            return data;
-        } catch (error) {
-            if (error instanceof FigmaError) {
-                throw error;
-            }
-            throw new FigmaError(`Failed to fetch file ${fileId}: ${error}`, 'FETCH_ERROR');
-        }
     }
 
     /**
