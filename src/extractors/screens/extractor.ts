@@ -85,6 +85,20 @@ export function analyzeScreenSections(
         visibleChildren = node.children.filter(child => child.visible !== false);
     }
 
+    // Filter out device UI elements (status bars, notches, home indicators, etc.)
+    const filteredDeviceUI = visibleChildren.filter(child => isDeviceUIElement(child, node));
+    visibleChildren = visibleChildren.filter(child => !isDeviceUIElement(child, node));
+    
+    // Add filtered device UI elements to skipped nodes for reporting
+    filteredDeviceUI.forEach(deviceUINode => {
+        skippedNodes.push({
+            nodeId: deviceUINode.id,
+            name: deviceUINode.name,
+            type: deviceUINode.type,
+            reason: 'device_ui_element'
+        });
+    });
+
     // Analyze each child as potential section
     const sectionsWithImportance = visibleChildren.map(child => ({
         node: child,
@@ -506,6 +520,109 @@ function hasIcon(node: FigmaNode): boolean {
 function detectActiveState(node: FigmaNode): boolean {
     const name = node.name.toLowerCase();
     return name.includes('active') || name.includes('selected') || name.includes('current');
+}
+
+/**
+ * Check if a node represents device UI elements that should be ignored
+ */
+function isDeviceUIElement(child: FigmaNode, parent: FigmaNode): boolean {
+    const name = child.name.toLowerCase();
+    const bounds = child.absoluteBoundingBox;
+    const parentBounds = parent.absoluteBoundingBox;
+    
+    if (!bounds || !parentBounds) return false;
+    
+    // Name-based detection for common device UI elements
+    const deviceUIKeywords = [
+        'status bar', 'statusbar', 'status_bar',
+        'battery', 'signal', 'wifi', 'cellular', 'carrier',
+        'notch', 'dynamic island', 'safe area',
+        'home indicator', 'home_indicator', 'home bar',
+        'navigation bar', 'system bar', 'system_bar',
+        'chin', 'bezel', 'nav bar',
+        'clock', 'time indicator',
+        'signal strength', 'battery indicator',
+        'screen recording', 'screen_recording'
+    ];
+    
+    // Check if name contains device UI keywords
+    if (deviceUIKeywords.some(keyword => name.includes(keyword))) {
+        return true;
+    }
+    
+    // Position and size-based detection
+    const screenWidth = parentBounds.width;
+    const screenHeight = parentBounds.height;
+    const elementWidth = bounds.width;
+    const elementHeight = bounds.height;
+    const elementY = bounds.y - parentBounds.y; // Relative position
+    const elementX = bounds.x - parentBounds.x;
+    
+    // Status bar detection (top of screen)
+    if (elementY <= 50 && // Very close to top
+        elementWidth >= screenWidth * 0.8 && // Nearly full width
+        elementHeight <= 50) { // Thin height
+        
+        // Additional checks for status bar content
+        if (hasStatusBarContent(child)) {
+            return true;
+        }
+    }
+    
+    // Home indicator detection (bottom of screen)
+    if (elementY >= screenHeight - 50 && // Very close to bottom
+        elementWidth <= screenWidth * 0.4 && // Narrow width (typical home indicator)
+        elementHeight <= 20 && // Very thin
+        elementX >= screenWidth * 0.3 && // Centered horizontally
+        elementX <= screenWidth * 0.7) {
+        return true;
+    }
+    
+    // Notch/Dynamic Island detection (top center, small area)
+    if (elementY <= 30 && // Very top
+        elementWidth <= screenWidth * 0.3 && // Small width
+        elementHeight <= 30 && // Small height
+        elementX >= screenWidth * 0.35 && // Centered area
+        elementX <= screenWidth * 0.65) {
+        return true;
+    }
+    
+    // Side bezels or navigation areas
+    if ((elementX <= 20 || elementX >= screenWidth - 20) && // At edges
+        elementWidth <= 40 && // Thin
+        elementHeight >= screenHeight * 0.3) { // Tall
+        return true;
+    }
+    
+    // Small elements in corners (likely UI indicators)
+    const isInCorner = (elementX <= 50 || elementX >= screenWidth - 50) &&
+                      (elementY <= 50 || elementY >= screenHeight - 50);
+    if (isInCorner && elementWidth <= 80 && elementHeight <= 80) {
+        return true;
+    }
+    
+    return false;
+}
+
+/**
+ * Check if a node contains typical status bar content
+ */
+function hasStatusBarContent(node: FigmaNode): boolean {
+    if (!node.children) return false;
+    
+    const statusBarElements = node.children.some(child => {
+        const name = child.name.toLowerCase();
+        return name.includes('battery') || 
+               name.includes('signal') || 
+               name.includes('wifi') || 
+               name.includes('time') || 
+               name.includes('clock') ||
+               name.includes('carrier') ||
+               name.includes('cellular') ||
+               (child.type === 'TEXT' && /^\d{1,2}:\d{2}/.test(child.name)); // Time format
+    });
+    
+    return statusBarElements;
 }
 
 /**

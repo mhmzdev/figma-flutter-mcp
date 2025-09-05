@@ -104,7 +104,7 @@ export interface SkippedNodeInfo {
     nodeId: string;
     name: string;
     type: string;
-    reason: 'depth_limit' | 'complexity' | 'max_sections';
+    reason: 'depth_limit' | 'complexity' | 'max_sections' | 'device_ui_element';
 }
 
 /**

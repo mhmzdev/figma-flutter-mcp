@@ -222,6 +222,14 @@ export function generateComponentAnalysisReport(
 export function generateFlutterGuidance(analysis: ComponentAnalysis): string {
     let guidance = `Flutter Implementation Guidance:\n\n`;
 
+    // Widget composition best practices
+    guidance += `🏗️  Widget Composition Best Practices:\n`;
+    guidance += `- Start by building the complete widget tree in a single build() method\n`;
+    guidance += `- Keep composing widgets inline until you reach ~200 lines of code\n`;
+    guidance += `- Only then extract reusable parts into private StatelessWidget classes\n`;
+    guidance += `- Use private widgets (prefix with _) for internal component breakdown\n`;
+    guidance += `- Avoid functional widgets - always use StatelessWidget classes\n\n`;
+
     // Main container guidance
     guidance += `Main Widget Structure:\n`;
     if (analysis.layout.type === 'auto-layout') {

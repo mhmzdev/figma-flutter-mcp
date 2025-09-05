@@ -55,13 +55,28 @@ export async function startHttpServer(port: number, figmaApiKey: string): Promis
       // Reuse existing transport
       Logger.log("Reusing existing StreamableHTTP transport for sessionId", sessionId);
       transport = transports.streamable[sessionId];
-    } else if (!sessionId && isInitializeRequest(req.body)) {
+    } else if (isInitializeRequest(req.body)) {
       Logger.log("New initialization request for StreamableHTTP sessionId", sessionId);
       transport = new StreamableHTTPServerTransport({
         sessionIdGenerator: () => randomUUID(),
         onsessioninitialized: (sessionId) => {
           // Store the transport by session ID
           transports.streamable[sessionId] = transport;
+        },
+      });
+      transport.onclose = () => {
+        if (transport.sessionId) {
+          delete transports.streamable[transport.sessionId];
+        }
+      };
+      await mcpServer.connect(transport);
+    } else if (sessionId) {
+      // Session ID provided but transport not found - create new one
+      Logger.log("Creating new transport for existing sessionId", sessionId);
+      transport = new StreamableHTTPServerTransport({
+        sessionIdGenerator: () => sessionId,
+        onsessioninitialized: (newSessionId) => {
+          transports.streamable[newSessionId] = transport;
         },
       });
       transport.onclose = () => {

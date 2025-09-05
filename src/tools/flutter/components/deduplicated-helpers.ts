@@ -53,6 +53,13 @@ export function generateFlutterImplementation(analysis: DeduplicatedComponentAna
   const styleLibrary = FlutterStyleLibrary.getInstance();
   let implementation = `Flutter Implementation:\n\n`;
   
+  // Widget composition guidance
+  implementation += `🏗️  Widget Composition Guidelines:\n`;
+  implementation += `- Build the complete widget tree inline in build() method first\n`;
+  implementation += `- Keep composing until you reach ~200 lines, then extract private widgets\n`;
+  implementation += `- Use private StatelessWidget classes (prefix with _) for breakdown\n`;
+  implementation += `- Avoid functional widgets - always use proper StatelessWidget classes\n\n`;
+  
   // Widget structure
   const widgetName = toPascalCase(analysis.metadata.name);
   implementation += `class ${widgetName} extends StatelessWidget {\n`;
@@ -218,7 +225,12 @@ export function generateComprehensiveDeduplicatedReport(
   output += `🚀 Quick Actions:\n`;
   output += `   • Use 'generate_flutter_implementation' tool for complete Flutter code\n`;
   output += `   • Use 'analyze_figma_component' with different components to build style library\n`;
-  output += `   • Use 'resetStyleLibrary: true' to start fresh analysis\n`;
+  output += `   • Use 'resetStyleLibrary: true' to start fresh analysis\n\n`;
+  
+  output += `🏗️  Widget Composition Reminder:\n`;
+  output += `   • Build complete widget tree inline first (~200 lines max)\n`;
+  output += `   • Extract to private StatelessWidget classes only when needed\n`;
+  output += `   • Avoid functional widgets - use proper StatelessWidget classes\n`;
 
   return output;
 }

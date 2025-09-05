@@ -120,11 +120,27 @@ export function generateScreenAnalysisReport(
     // Skipped nodes report
     if (analysis.skippedNodes && analysis.skippedNodes.length > 0) {
         output += `Analysis Limitations:\n`;
-        output += `${analysis.skippedNodes.length} sections were skipped due to limits:\n`;
-        analysis.skippedNodes.forEach((skipped, index) => {
-            output += `${index + 1}. ${skipped.name} (${skipped.type}) - ${skipped.reason}\n`;
-        });
-        output += `\nTo analyze all sections, increase the maxSections parameter.\n\n`;
+        
+        const deviceUISkipped = analysis.skippedNodes.filter(node => node.reason === 'device_ui_element');
+        const limitSkipped = analysis.skippedNodes.filter(node => node.reason === 'max_sections');
+        
+        if (deviceUISkipped.length > 0) {
+            output += `${deviceUISkipped.length} device UI elements were automatically filtered out:\n`;
+            deviceUISkipped.forEach((skipped, index) => {
+                output += `${index + 1}. ${skipped.name} (${skipped.type}) - device UI placeholder\n`;
+            });
+            output += `\n`;
+        }
+        
+        if (limitSkipped.length > 0) {
+            output += `${limitSkipped.length} sections were skipped due to limits:\n`;
+            limitSkipped.forEach((skipped, index) => {
+                output += `${index + 1}. ${skipped.name} (${skipped.type}) - ${skipped.reason}\n`;
+            });
+            output += `\nTo analyze all sections, increase the maxSections parameter.\n`;
+        }
+        
+        output += `\n`;
     }
 
     // Flutter implementation guidance
@@ -247,6 +263,20 @@ export function generateScreenStructureReport(node: any, showAllSections: boolea
  */
 export function generateFlutterScreenGuidance(analysis: ScreenAnalysis): string {
     let guidance = `Flutter Screen Implementation Guidance:\n\n`;
+
+    // Widget composition best practices
+    guidance += `🏗️  Widget Composition Best Practices:\n`;
+    guidance += `- Start by building the complete screen widget tree in a single build() method\n`;
+    guidance += `- Keep composing widgets inline until you reach ~200 lines of code\n`;
+    guidance += `- Only then break down into private StatelessWidget classes for sections\n`;
+    guidance += `- Use private widgets (prefix with _) for internal screen component breakdown\n`;
+    guidance += `- Avoid functional widgets - always use StatelessWidget classes\n\n`;
+    
+    guidance += `📱 Device UI Filtering:\n`;
+    guidance += `- Status bars, battery icons, wifi indicators are automatically filtered out\n`;
+    guidance += `- Home indicators, notches, and device bezels are ignored during analysis\n`;
+    guidance += `- Only actual app design content is analyzed for Flutter implementation\n`;
+    guidance += `- Use SafeArea widget in Flutter to handle device-specific insets\n\n`;
 
     // Main scaffold structure
     guidance += `Main Screen Structure:\n`;

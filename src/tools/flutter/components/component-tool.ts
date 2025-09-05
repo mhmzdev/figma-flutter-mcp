@@ -728,6 +728,15 @@ function generateAssetExportReport(exportedAssets: AssetInfo[]): string {
 function generateWidgetClass(componentNodeId: string, widgetName: string, styles: Array<any>): string {
     let output = `🎯 Widget Implementation:\n`;
     output += `${'─'.repeat(30)}\n`;
+    
+    // Widget composition best practices
+    output += `🏗️  Widget Composition Guidelines:\n`;
+    output += `- Start with inline widget tree composition in build() method\n`;
+    output += `- Continue composing inline until you reach ~200 lines of code\n`;
+    output += `- Only then extract parts into private StatelessWidget classes\n`;
+    output += `- Use private widgets (prefix with _) for internal breakdown\n`;
+    output += `- Avoid functional widgets - always use StatelessWidget classes\n\n`;
+    
     output += `class ${widgetName} extends StatelessWidget {\n`;
     output += `  const ${widgetName}({Key? key}) : super(key: key);\n\n`;
     output += `  @override\n`;
@@ -792,10 +801,11 @@ function generateWidgetClass(componentNodeId: string, widgetName: string, styles
     // Add usage instructions
     output += `\n💡 Usage Instructions:\n`;
     output += `${'─'.repeat(30)}\n`;
-    output += `1. Import this widget in your Flutter app\n`;
-    output += `2. Replace 'Sample Text' with actual content\n`;
-    output += `3. Customize the widget structure as needed\n`;
-    output += `4. Add any missing properties or methods\n\n`;
+    output += `1. Start by building the complete widget tree inline in build() method\n`;
+    output += `2. Keep composing widgets inline until you reach ~200 lines\n`;
+    output += `3. Only then extract reusable parts into private StatelessWidget classes\n`;
+    output += `4. Replace 'Sample Text' with actual content from Figma\n`;
+    output += `5. Customize the widget structure and add any missing properties\n\n`;
 
     if (styles.length > 0) {
         output += `📦 Available Style References:\n`;
