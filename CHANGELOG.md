@@ -1,5 +1,11 @@
 # figma-flutter-mcp
 
+## 0.3.0
+
+### Minor Changes
+
+- [#36](https://github.com/mhmzdev/figma-flutter-mcp/pull/36) [`d3e64e8`](https://github.com/mhmzdev/figma-flutter-mcp/commit/d3e64e8c3a64d07deed0c2102b79bd9e2c51cfc3) Thanks [@mhmzdev](https://github.com/mhmzdev)! - Migrated .mts to .ts, added semantic detection and visual context approaches
+
 ## 0.2.0
 
 ### Minor Changes
