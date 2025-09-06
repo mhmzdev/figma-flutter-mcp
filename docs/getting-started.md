@@ -62,6 +62,66 @@ First, you'll need a Figma access token:
 ## ⚠️ Important Note
 As you'll follow through we are NOT generating Flutter Code, we're actually letting AI do that for us. So, keyword here would be "Good Prompt". The more informative your prompt is, the better the results will be. Of course, there's always a room for improvement in MCP itself but when it comes to implementation in Flutter, its all up to AI (Cursor in this case).
 
+---
+
+## 🤖 AI Coding Agent Assistance
+
+For better results, you can setup some instructions in following files as per your AI Coding Agent:
+
+### Setting Up AI Agent Instructions
+
+Different AI coding agents use different configuration files to understand your project requirements and coding standards:
+
+- **Cursor**: `.cursor/rules/fluttering.mdc`
+- **Claude**: `CLAUDE.md`
+- **Gemini CLI**: `GEMINI.md`
+
+This way your AI agent will use the MCP's output and ensure the Flutter code is as per your project requirements and structure.
+
+### Example Cursor Rules
+
+You can checkout an example of [cursor rules](cursor_rules_example.md) that can be used for testing. Create a `.cursor/rules/fluttering.mdc` file in your project root with instructions like:
+
+```markdown
+# Flutter Development Rules
+
+## Code Style
+- Use Material 3 design principles
+- Follow Flutter best practices for widget composition
+- Implement proper state management (specify your preference: Provider, Riverpod, Bloc)
+- Use meaningful variable and function names
+- Add proper documentation and comments
+
+## File Organization
+- Break complex widgets into smaller, reusable components
+- Use proper folder structure (lib/widgets/, lib/screens/, lib/models/, etc.)
+- Create separate files for different concerns
+- Use barrel exports for cleaner imports
+
+## Figma Integration
+- When analyzing Figma components, focus on reusability
+- Extract design tokens (colors, typography, spacing) into theme files
+- Export assets to appropriate directories (assets/images/, assets/svg/)
+- Update pubspec.yaml automatically when adding assets
+
+## Performance
+- Use const constructors where possible
+- Implement proper widget keys for list items
+- Avoid unnecessary rebuilds with proper state management
+- Consider using Builder widgets for complex layouts
+```
+
+### Benefits of AI Agent Configuration
+
+When you configure your AI agent properly:
+
+1. **Consistent Code Style**: Your AI will generate code that follows your project's conventions
+2. **Better Architecture**: AI understands your preferred patterns and structures
+3. **Automated Best Practices**: AI applies Flutter best practices automatically
+4. **Project-Specific Requirements**: AI considers your specific needs (state management, design system, etc.)
+
+---
+
 ## 🎨 Setting Up Theme Colors
 
 The most efficient way to generate Flutter themes is to create a dedicated theme frame in Figma.

@@ -38,7 +38,6 @@ Use [Cursor](https://cursor.sh) or other AI-powered tools to access Figma's rich
 - [🧱 Basic Workflow](#-basic-workflow)
   - [🤖 AI Coding Agent Assistance](#-ai-coding-agent-assistance)
   - [⚠️ Why SVG assets don't work with screen generation](#️-why-svg-assets-dont-work-with-screen-generation)
-- [🧰 MCP Tools](#-mcp-tools)
 - [⚠️ Disclaimers](#-disclaimers)
 - [🙌🏼 Acknowledgments](#-acknowledgments)
 - [🧱 Other framworks](#-other-framworks)
