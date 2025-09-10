@@ -42,11 +42,11 @@ Cursor やその他の AI 対応ツールを使用して、[MCP サーバー](ht
 
 ## 🎥 ビデオデモ
 Figma Flutter MCP のほぼすべての機能を、実際の Figma デザインで紹介しています。
-- 英語: https://youtu.be/o_GezwAlXlU
+- 英語: https://youtu.be/lJlfOfpl2sI
 - ウルドゥー語/ヒンディー語: https://youtu.be/mepPWpIZ61M
 
 ## 📝 [はじめに](docs/getting-started.md)
-詳しい手順は [getting started](docs/getting-started.md) を参照してください。クイックスタートには [デモ動画](https://youtu.be/o_GezwAlXlU) もご利用いただけます。初回リリースのため、改善の余地が多くあります。改善点や追加で取り組める点は [issues](https://github.com/mhmzdev/figma-flutter-mcp/issues) をご確認ください。
+詳しい手順は [getting started](docs/getting-started.md) を参照してください。クイックスタートには [デモ動画](https://youtu.be/lJlfOfpl2sI) もご利用いただけます。初回リリースのため、改善の余地が多くあります。改善点や追加で取り組める点は [issues](https://github.com/mhmzdev/figma-flutter-mcp/issues) をご確認ください。
 
 ## 📚 仕組み | [詳細はこちら](docs/figma-flutter-mcp.md)
 1. [コンポーネント/ウィジェット](src/extractors/components/)

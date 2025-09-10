@@ -42,11 +42,11 @@
 
 ## 🎥 视频演示
 使用真实的 Figma 设计展示了 Figma Flutter MCP 的几乎所有功能。
-- 英文: https://youtu.be/o_GezwAlXlU
+- 英文: https://youtu.be/lJlfOfpl2sI
 - 乌尔都语/印地语: https://youtu.be/mepPWpIZ61M
 
 ## 📝 [入门](docs/getting-started.md)
-你可以查看详细的 [getting started](docs/getting-started.md) 文档，或观看[演示视频](https://youtu.be/o_GezwAlXlU) 作为快速开始。由于这是首次发布，还有大量改进空间；你也可以查看 [issues](https://github.com/mhmzdev/figma-flutter-mcp/issues) 了解还有哪些工作或可改进之处。
+你可以查看详细的 [getting started](docs/getting-started.md) 文档，或观看[演示视频](https://youtu.be/lJlfOfpl2sI) 作为快速开始。由于这是首次发布，还有大量改进空间；你也可以查看 [issues](https://github.com/mhmzdev/figma-flutter-mcp/issues) 了解还有哪些工作或可改进之处。
 
 ## 📚 工作原理 | [详见此处](docs/figma-flutter-mcp.md)
 1. [组件/小部件](src/extractors/components/)
