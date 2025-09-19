@@ -1,6 +1,5 @@
 <div align="center">
   <img src="docs/images/figma-flutter-mcp.png" alt="Theme Setup Example" style="max-width: 100%; height: auto;">
-  
   <br>
 
   <h1>Figma to Flutter MCP Server</h1>
@@ -45,6 +44,12 @@ Use [Cursor](https://cursor.sh) or other AI-powered tools to access Figma's rich
 - [🙋‍♂️ Author](#-author)
   - [Muhammad Hamza](#muhammad-hamza)
 
+## 🦋 Observable<Flutter> #70
+Featured on Observable<Flutter> with enhanced explanation and demo:
+
+<a href="https://www.youtube.com/live/d7qrvytOxSA?si=ESY8hPJpQm_OY4Ye">
+  <img src="https://i.ytimg.com/vi/d7qrvytOxSA/hq720.jpg?sqp=-oaymwEnCNAFEJQDSFryq4qpAxkIARUAAIhCGAHYAQHiAQoIGBACGAY4AUAB&rs=AOn4CLAtjlrlbNDcV_MQ-_MHJN3KAgwpKw" alt="Observable Flutter Figma to Flutter MCP" style="max-width: 100%; height: 300px;">
+</a>
 
 ## 🎥 Video Demo
 Showcased almost all the features of Figma Flutter MCP with real figma design.
@@ -174,32 +179,47 @@ This way your AI agent will use the MCP's output and ensure the flutter code is 
 
 ![Button](docs/images/button.png)
 
-This one has 8 variants, you may prompt whether you want to have variants or not.
+This one has 2 variants with enabled and disabled states.
 ```
-"Create this widget in flutter <figma_link>, setup only 2 variants for now and break the files in smaller parts for code readability.
+"Create this widget in flutter from figma COMPONENT link: <figma_link>, use named constructors for variants and break the files in smaller parts for code readability."
 ```
 If you **do not** have COMPONENTS in figma, you can use FRAME just prompt the AI that you want this to be a widget and it will handle the rest.
 
-3. **Full Screen Generation**: If there are any IMAGE ASSETS available, it will export them and put them in `assets/` along with `pubspec.yaml`
+3. **Full Screen Generation**: If there are any IMAGE ASSETS (.png, .jpeg, .jpg etc.) available, it will export them and put them in `assets/` along with `pubspec.yaml`
+
+<img src="docs/images/screen.png" alt="Screen" height="500" width="auto">
+
 ```
-"Create full screen from this figma link <figma_link>, ensure the code is readable by having smaller files
+"Design this intro screen from the figma link <figma_link>, ensure the code is readable by having smaller files."
 ```
 4. **Assets Export**:
 - Image Assets: Will work automatically when generating screens
 ```
-"Export this image asset from figma <figma_link>
+"Export this image asset from figma link: <figma_link>
 ```
-- SVG Assets: Will NOT work automatically, explained below.
+- SVG Assets: Will NOT work automatically if they are scrambled or are ungrouped, explained below.
 ```
-"Export this as an SVG asset from Figma: <figma_link>
+"Export this as an SVG asset from Figma link: <figma_link>"
 ```
-#### ⚠️ Why SVG assets don’t work with screen generation
-In Figma vectors include icons and pen-tool shapes, so bulk exports may grab unintended nodes; recommend exporting SVGs separately. This process still saves you a lot of time by exporting them in your `assets/svg/` directory and updating your `pubspec.yaml`.
+#### ⚠️ If SVG assets don’t work with screen generation
+* In Figma vectors include icons and pen-tool shapes, so bulk exports may grab unintended nodes;
+  *  Recommend exporting SVGs **separately** i.e. to take them out an an independent FRAME or GROUP
+  *  Here's how the separation of SVGs looks like:
+
+<img src="docs/images/svgs_clean.gif" alt="Screen" height="500" width="auto">
+
+<br>
+
+* Here's an example of identifying a GOOD vs BAD svg while exporting them:
+
+<br>
+
+<img src="docs/images/svg.gif" alt="Screen" height="500" width="auto">
 
 ## ⚠️ Disclaimers
 
-- **Figma Design**: Since we're using Figma's API to fetch the node and its details, so the better design you have the more better it will interpret for the AI to consume i.e. auto layouts, frame usage over group usage, consistently aligned across the board.
 - **Use Case**: At this stage, its highly recommend to NOT use it to develop scalable apps rather try and play it with MVPs, smaller and explanatory tasks.
+- **Figma Design**: Since we're using Figma's API to fetch the node and its details, so the better design you have the more better it will interpret for the AI to consume i.e. auto layouts, frame usage over group usage, consistently aligned across the board.
 - **Rate limiting**: Heavy usage may trigger Figma rate limits (e.g., HTTP 429). The server includes retry with backoff, but it does not bypass Figma limits. If you encounter rate limits, wait a few minutes and reduce the request volume.
 
 ## 🙌🏼 Acknowledgments
