@@ -21,7 +21,8 @@
 
 ## 📋 目录
 
-- [🎥 视频演示](#-视频演示)
+- [🦋 Observable Flutter #70](#-observable-flutter-70)
+- [🎥 短视频演示](#-短视频演示)
 - [📝 入门](#-入门)
 - [📚 工作原理](#-工作原理--详见此处)
 - [🛠️ 用法](#-用法)
@@ -30,7 +31,7 @@
   - [🚀 本地测试快速开始](#-本地测试快速开始)
 - [🧱 基本工作流](#-基本工作流)
   - [🤖 AI 编码代理协助](#-ai-编码代理协助)
-  - [⚠️ 为什么 SVG 资源在生成屏幕时不起作用](#-为什么-svg-资源在生成屏幕时不起作用)
+  - [⚠️ 如果 SVG 资源在生成屏幕时不起作用](#-如果-svg-资源在生成屏幕时不起作用)
 - [🧰 MCP 工具](#-mcp-工具)
 - [⚠️ 免责声明](#-免责声明)
 - [🙌🏼 致谢](#-致谢)
@@ -40,7 +41,14 @@
   - [Muhammad Hamza](#muhammad-hamza)
 
 
-## 🎥 视频演示
+## 🦋 Observable Flutter #70
+该项目在 Observable Flutter 中被重点介绍，并附有更完整的讲解与演示：
+
+<a href="https://www.youtube.com/live/d7qrvytOxSA?si=ESY8hPJpQm_OY4Ye">
+  <img src="https://i.ytimg.com/vi/d7qrvytOxSA/hq720.jpg?sqp=-oaymwEnCNAFEJQDSFryq4qpAxkIARUAAIhCGAHYAQHiAQoIGBACGAY4AUAB&rs=AOn4CLAtjlrlbNDcV_MQ-_MHJN3KAgwpKw" alt="Observable Flutter Figma to Flutter MCP" style="max-width: 100%; height: 300px;">
+</a>
+
+## 🎥 短视频演示
 使用真实的 Figma 设计展示了 Figma Flutter MCP 的几乎所有功能。
 - 英文: https://youtu.be/lJlfOfpl2sI
 - 乌尔都语/印地语: https://youtu.be/mepPWpIZ61M
@@ -210,7 +218,7 @@ npm run build
 ```
 "从 Figma 将其导出为 SVG 资源：<figma_link>"
 ```
-#### ⚠️ 为什么 SVG 资源在生成屏幕时不起作用
+#### ⚠️ 如果 SVG 资源在生成屏幕时不起作用
 在 Figma 中矢量包括图标与钢笔工具绘制的形状，大批量导出时可能会抓取到非预期的节点；建议单独导出 SVG。该过程仍然能节省大量时间，因为会将它们保存到 `assets/svg/` 目录并更新 `pubspec.yaml`。
 
 ## 🧰 MCP 工具

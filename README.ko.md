@@ -21,7 +21,8 @@ Cursor(커서) 또는 기타 AI 기반 도구를 사용하여 [MCP 서버](https
 
 ## 📋 목차
 
-- [🎥 비디오 데모](#-비디오-데모)
+- [🦋 Observable Flutter #70](#-observable-flutter-70)
+- [🎥 짧은 비디오 데모](#-짧은-비디오-데모)
 - [📝 시작하기](#-시작하기)
 - [📚 작동 방식](#-작동-방식--자세히-보기)
 - [🛠️ 사용법](#-사용법)
@@ -30,7 +31,7 @@ Cursor(커서) 또는 기타 AI 기반 도구를 사용하여 [MCP 서버](https
   - [🚀 로컬 테스트 빠른 시작](#-로컬-테스트-빠른-시작)
 - [🧱 기본 워크플로우](#-기본-워크플로우)
   - [🤖 AI 코딩 에이전트 도움말](#-ai-코딩-에이전트-도움말)
-  - [⚠️ 왜 SVG 에셋은 화면 생성에서 작동하지 않나요?](#-왜-svg-에셋은-화면-생성에서-작동하지-않나요)
+  - [⚠️ SVG 에셋이 화면 생성에서 작동하지 않는 경우](#-svg-에셋이-화면-생성에서-작동하지-않는-경우)
 - [🧰 MCP 도구](#-mcp-도구)
 - [⚠️ 고지사항](#-고지사항)
 - [🙌🏼 감사의 말](#-감사의-말)
@@ -40,7 +41,14 @@ Cursor(커서) 또는 기타 AI 기반 도구를 사용하여 [MCP 서버](https
   - [Muhammad Hamza](#muhammad-hamza)
 
 
-## 🎥 비디오 데모
+## 🦋 Observable Flutter #70
+향상된 설명과 데모와 함께 Observable Flutter에 소개되었습니다:
+
+<a href="https://www.youtube.com/live/d7qrvytOxSA?si=ESY8hPJpQm_OY4Ye">
+  <img src="https://i.ytimg.com/vi/d7qrvytOxSA/hq720.jpg?sqp=-oaymwEnCNAFEJQDSFryq4qpAxkIARUAAIhCGAHYAQHiAQoIGBACGAY4AUAB&rs=AOn4CLAtjlrlbNDcV_MQ-_MHJN3KAgwpKw" alt="Observable Flutter Figma to Flutter MCP" style="max-width: 100%; height: 300px;">
+</a>
+
+## 🎥 짧은 비디오 데모
 Figma Flutter MCP의 거의 모든 기능을 실제 Figma 디자인으로 시연했습니다.
 - 영어: https://youtu.be/lJlfOfpl2sI
 - 우르두/힌디: https://youtu.be/mepPWpIZ61M
@@ -210,7 +218,7 @@ npm run build
 ```
 "Figma에서 이것을 SVG 에셋으로 내보내세요: <figma_link>"
 ```
-#### ⚠️ 왜 SVG 에셋은 화면 생성에서 작동하지 않나요?
+#### ⚠️ SVG 에셋이 화면 생성에서 작동하지 않는 경우
 Figma에서 벡터에는 아이콘과 펜 도구로 만든 도형이 포함되어 있어 대량 내보내기 시 의도하지 않은 노드를 함께 내보낼 수 있습니다. SVG는 별도로 내보내는 것을 권장합니다. 이 과정은 여전히 `assets/svg/` 디렉토리에 에셋을 저장하고 `pubspec.yaml`을 업데이트해 주기 때문에 많은 시간을 절약해 줍니다.
 
 ## 🧰 MCP 도구

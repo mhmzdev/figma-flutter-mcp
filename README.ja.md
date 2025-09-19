@@ -21,7 +21,8 @@ Cursor やその他の AI 対応ツールを使用して、[MCP サーバー](ht
 
 ## 📋 目次
 
-- [🎥 ビデオデモ](#-ビデオデモ)
+- [🦋 Observable Flutter #70](#-observable-flutter-70)
+- [🎥 ショートビデオデモ](#-ショートビデオデモ)
 - [📝 はじめに](#-はじめに)
 - [📚 仕組み](#-仕組み--詳細はこちら)
 - [🤖 AI コーディングエージェント支援](#-ai-コーディングエージェント支援)
@@ -30,7 +31,7 @@ Cursor やその他の AI 対応ツールを使用して、[MCP サーバー](ht
   - [🏹 Cursor での MCP](#-cursor-での-mcp)
   - [🧑🏼‍💻 ローカルセットアップ](#-ローカルセットアップ)
 - [🧱 基本的なワークフロー](#-基本的なワークフロー)
-  - [⚠️ なぜ SVG アセットは画面生成で機能しないのか](#-なぜ-svg-アセットは画面生成で機能しないのか)
+  - [⚠️ SVG アセットが画面生成で機能しない場合](#-svg-アセットが画面生成で機能しない場合)
 - [🧰 MCP ツール](#-mcp-ツール)
 - [⚠️ 免責事項](#-免責事項)
 - [🙌🏼 謝辞](#-謝辞)
@@ -40,7 +41,14 @@ Cursor やその他の AI 対応ツールを使用して、[MCP サーバー](ht
   - [Muhammad Hamza](#muhammad-hamza)
 
 
-## 🎥 ビデオデモ
+## 🦋 Observable Flutter #70
+詳細な解説とデモ付きで Observable Flutter に取り上げられました:
+
+<a href="https://www.youtube.com/live/d7qrvytOxSA?si=ESY8hPJpQm_OY4Ye">
+  <img src="https://i.ytimg.com/vi/d7qrvytOxSA/hq720.jpg?sqp=-oaymwEnCNAFEJQDSFryq4qpAxkIARUAAIhCGAHYAQHiAQoIGBACGAY4AUAB&rs=AOn4CLAtjlrlbNDcV_MQ-_MHJN3KAgwpKw" alt="Observable Flutter Figma to Flutter MCP" style="max-width: 100%; height: 300px;">
+</a>
+
+## 🎥 ショートビデオデモ
 Figma Flutter MCP のほぼすべての機能を、実際の Figma デザインで紹介しています。
 - 英語: https://youtu.be/lJlfOfpl2sI
 - ウルドゥー語/ヒンディー語: https://youtu.be/mepPWpIZ61M
@@ -210,7 +218,7 @@ Figma に COMPONENTS がない場合は、FRAME を使用できます。「こ�
 ```
 "Figma からこれを SVG アセットとしてエクスポートしてください: <figma_link>"
 ```
-#### ⚠️ なぜ SVG アセットは画面生成で機能しないのか
+#### ⚠️ SVG アセットが画面生成で機能しない場合
 Figma ではベクターにはアイコンやペンツールのシェイプが含まれるため、一括エクスポートでは意図しないノードまで取得してしまう可能性があります。SVG は個別にエクスポートすることを推奨します。このプロセスでも `assets/svg/` ディレクトリにアセットを保存し、`pubspec.yaml` を更新するため、時間の節約になります。
 
 ## 🧰 MCP ツール

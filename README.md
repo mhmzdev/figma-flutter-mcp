@@ -27,7 +27,8 @@ Use [Cursor](https://cursor.sh) or other AI-powered tools to access Figma's rich
 
 ## 📋 Table of Contents
 
-- [🎥 Video Demo](#-video-demo)
+- [🦋 Observable Flutter #70](#-observable-flutter-70)
+- [🎥 Short Video Demo](#-short-video-demo)
 - [📝 Getting Started](#-getting-started)
 - [📚 How it works](#-how-it-works--details-here)
 - [🛠️ Usage](#-usage)
@@ -36,7 +37,7 @@ Use [Cursor](https://cursor.sh) or other AI-powered tools to access Figma's rich
   - [🚀 Quick Start for Local Testing](#-quick-start-for-local-testing)
 - [🧱 Basic Workflow](#-basic-workflow)
   - [🤖 AI Coding Agent Assistance](#-ai-coding-agent-assistance)
-  - [⚠️ Why SVG assets don't work with screen generation](#️-why-svg-assets-dont-work-with-screen-generation)
+  - [⚠️ If SVG assets don’t work with screen generation](#-if-svg-assets-dont-work-with-screen-generation)
 - [⚠️ Disclaimers](#-disclaimers)
 - [🙌🏼 Acknowledgments](#-acknowledgments)
 - [🧱 Other framworks](#-other-framworks)
@@ -44,14 +45,14 @@ Use [Cursor](https://cursor.sh) or other AI-powered tools to access Figma's rich
 - [🙋‍♂️ Author](#-author)
   - [Muhammad Hamza](#muhammad-hamza)
 
-## 🦋 Observable<Flutter> #70
-Featured on Observable<Flutter> with enhanced explanation and demo:
+## 🦋 Observable Flutter #70
+Featured on Observable Flutter with enhanced explanation and demo:
 
 <a href="https://www.youtube.com/live/d7qrvytOxSA?si=ESY8hPJpQm_OY4Ye">
   <img src="https://i.ytimg.com/vi/d7qrvytOxSA/hq720.jpg?sqp=-oaymwEnCNAFEJQDSFryq4qpAxkIARUAAIhCGAHYAQHiAQoIGBACGAY4AUAB&rs=AOn4CLAtjlrlbNDcV_MQ-_MHJN3KAgwpKw" alt="Observable Flutter Figma to Flutter MCP" style="max-width: 100%; height: 300px;">
 </a>
 
-## 🎥 Video Demo
+## 🎥 Short Video Demo
 Showcased almost all the features of Figma Flutter MCP with real figma design.
 - English: https://youtu.be/lJlfOfpl2sI
 - Urdu/Hindi: https://youtu.be/mepPWpIZ61M

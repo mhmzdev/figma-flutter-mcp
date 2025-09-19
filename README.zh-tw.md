@@ -21,7 +21,8 @@
 
 ## 📋 目錄
 
-- [🎥 影片示範](#-影片示範)
+- [🦋 Observable Flutter #70](#-observable-flutter-70)
+- [🎥 短影片示範](#-短影片示範)
 - [📝 開始使用](#-開始使用)
 - [📚 運作原理](#-運作原理--詳情請見)
 - [🛠️ 使用方式](#-使用方式)
@@ -30,7 +31,7 @@
   - [🚀 本機測試快速開始](#-本機測試快速開始)
 - [🧱 基本工作流程](#-基本工作流程)
   - [🤖 AI 程式代理協助](#-ai-程式代理協助)
-  - [⚠️ 為什麼 SVG 資源無法在螢幕產生時運作](#-為什麼-svg-資源無法在螢幕產生時運作)
+  - [⚠️ 若 SVG 資源在螢幕產生時無法運作](#-若-svg-資源在螢幕產生時無法運作)
 - [🧰 MCP 工具](#-mcp-工具)
 - [⚠️ 免責聲明](#-免責聲明)
 - [🙌🏼 致謝](#-致謝)
@@ -40,7 +41,14 @@
   - [Muhammad Hamza](#muhammad-hamza)
 
 
-## 🎥 影片示範
+## 🦋 Observable Flutter #70
+本專案已在 Observable Flutter 節目中展示，包含更完整的解說與示範：
+
+<a href="https://www.youtube.com/live/d7qrvytOxSA?si=ESY8hPJpQm_OY4Ye">
+  <img src="https://i.ytimg.com/vi/d7qrvytOxSA/hq720.jpg?sqp=-oaymwEnCNAFEJQDSFryq4qpAxkIARUAAIhCGAHYAQHiAQoIGBACGAY4AUAB&rs=AOn4CLAtjlrlbNDcV_MQ-_MHJN3KAgwpKw" alt="Observable Flutter Figma to Flutter MCP" style="max-width: 100%; height: 300px;">
+</a>
+
+## 🎥 短影片示範
 以真實的 Figma 設計展示 Figma Flutter MCP 的幾乎所有功能。
 - 英文：https://youtu.be/lJlfOfpl2sI
 - 烏爾都語/印地語：https://youtu.be/mepPWpIZ61M
@@ -210,7 +218,7 @@ npm run build
 ```
 "從 Figma 將其匯出為 SVG 資源：<figma_link>"
 ```
-#### ⚠️ 為什麼 SVG 資源無法在螢幕產生時運作
+#### ⚠️ 若 SVG 資源在螢幕產生時無法運作
 在 Figma 中向量圖包含圖示與鋼筆工具繪製的形狀，大量匯出時可能會抓取到非預期的節點；建議個別匯出 SVG。此流程仍能節省大量時間，因為會將它們儲存至 `assets/svg/` 目錄並更新 `pubspec.yaml`。
 
 ## 🧰 MCP 工具
