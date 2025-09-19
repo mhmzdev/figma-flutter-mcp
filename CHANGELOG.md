@@ -1,5 +1,11 @@
 # figma-flutter-mcp
 
+## 0.3.1
+
+### Patch Changes
+
+- [#38](https://github.com/mhmzdev/figma-flutter-mcp/pull/38) [`089b764`](https://github.com/mhmzdev/figma-flutter-mcp/commit/089b7647d5e4e37452b973ba521fb3bc878427dd) Thanks [@mhmzdev](https://github.com/mhmzdev)! - Docs updated with more understanding
+
 ## 0.3.0
 
 ### Minor Changes
