@@ -276,7 +276,7 @@ export function generateFlutterScreenGuidance(analysis: ScreenAnalysis): string 
     // Widget composition best practices
     guidance += `🏗️  Widget Composition Best Practices:\n`;
     guidance += `- Start by building the complete screen widget tree in a single build() method\n`;
-    guidance += `- Keep composing widgets inline until you reach ~200 lines of code\n`;
+    guidance += `- Keep composing widgets inline until you reach ~250 lines of code\n`;
     guidance += `- Only then break down into private StatelessWidget classes for sections\n`;
     guidance += `- Use private widgets (prefix with _) for internal screen component breakdown\n`;
     guidance += `- Avoid functional widgets - always use StatelessWidget classes\n\n`;
