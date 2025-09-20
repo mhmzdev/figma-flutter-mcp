@@ -10,7 +10,11 @@ async function startServer(): Promise<void> {
     } else if (config.isHttpMode) {
         if (config.isRemoteMode) {
             console.log('Starting Figma Flutter MCP Server in REMOTE mode...');
-            console.log('⚠️  Users MUST provide their own Figma API keys via:');
+            if (config.figmaApiKey) {
+                console.log('✅ Server has fallback API key, but users can provide their own via:');
+            } else {
+                console.log('⚠️  Users MUST provide their own Figma API keys via:');
+            }
             console.log('  - Authorization header (Bearer token)');
             console.log('  - X-Figma-Api-Key header');
             console.log('  - figmaApiKey query parameter');
