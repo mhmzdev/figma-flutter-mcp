@@ -1,5 +1,11 @@
 # figma-flutter-mcp
 
+## 0.3.2
+
+### Patch Changes
+
+- [#40](https://github.com/mhmzdev/figma-flutter-mcp/pull/40) [`287dbcc`](https://github.com/mhmzdev/figma-flutter-mcp/commit/287dbcc3a25040fe0f1f05aaf6374472683b8cba) Thanks [@mhmzdev](https://github.com/mhmzdev)! - StreamableHTTP and API key setup improved
+
 ## 0.3.1
 
 ### Patch Changes
