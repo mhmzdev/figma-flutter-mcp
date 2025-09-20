@@ -1,5 +1,11 @@
 # figma-flutter-mcp
 
+## 0.3.3
+
+### Patch Changes
+
+- [#42](https://github.com/mhmzdev/figma-flutter-mcp/pull/42) [`869314e`](https://github.com/mhmzdev/figma-flutter-mcp/commit/869314e16a2a393ddba22383a8e576161901ab71) Thanks [@mhmzdev](https://github.com/mhmzdev)! - feat: implement advanced style deduplication with semantic matching and auto-optimization
+
 ## 0.3.2
 
 ### Patch Changes
