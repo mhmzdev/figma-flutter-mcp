@@ -2,6 +2,9 @@ import {config as loadEnv} from "dotenv";
 import yargs from "yargs";
 import {hideBin} from "yargs/helpers";
 import {resolve} from "path";
+import {readFileSync} from "fs";
+import {fileURLToPath} from "url";
+import {dirname, join} from "path";
 
 export interface ServerConfig {
     figmaApiKey?: string;
@@ -23,6 +26,22 @@ export interface ServerConfig {
 function maskApiKey(key: string): string {
     if (!key || key.length <= 4) return "****";
     return `****${key.slice(-4)}`;
+}
+
+function getPackageVersion(): string {
+    try {
+        // Get the directory of the current module
+        const __filename = fileURLToPath(import.meta.url);
+        const __dirname = dirname(__filename);
+        
+        // Read package.json from the project root (one level up from src)
+        const packageJsonPath = join(__dirname, '..', 'package.json');
+        const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'));
+        return packageJson.version || '0.0.1';
+    } catch (error) {
+        // Fallback to environment variable or default
+        return process.env.npm_package_version || '0.0.1';
+    }
 }
 
 interface CliArgs {
@@ -68,7 +87,7 @@ export function getServerConfig(): ServerConfig {
             },
         })
         .help()
-        .version(process.env.npm_package_version || "0.0.1")
+        .version(getPackageVersion())
         .parseSync() as CliArgs;
 
     // Load environment variables from custom path or default
@@ -151,19 +170,24 @@ export function getServerConfig(): ServerConfig {
         config.configSources.port = "env";
     }
 
-    // Validate configuration - Users must provide their own API key for ALL modes except remote
-    if (!config.figmaApiKey && !config.isRemoteMode) {
-        console.error("Error: FIGMA_API_KEY is required.");
+    // Validate configuration - Users must provide their own API key for ALL modes
+    if (!config.figmaApiKey) {
+        console.error("Error: FIGMA_API_KEY is required for all modes.");
         console.error("Please provide your Figma API key via one of these methods:");
         console.error("  1. CLI argument: --figma-api-key=YOUR_API_KEY");
         console.error("  2. Environment variable: FIGMA_API_KEY=YOUR_API_KEY in .env file");
         console.error("");
         console.error("Get your API key from: https://help.figma.com/hc/en-us/articles/8085703771159-Manage-personal-access-tokens");
         console.error("");
+        if (config.isRemoteMode) {
+            console.error("Note: In remote mode, this key serves as a fallback.");
+            console.error("Users can still provide their own keys via HTTP headers for isolation.");
+        }
+        console.error("");
         console.error("Examples:");
         console.error("  npx figma-flutter-mcp --figma-api-key=YOUR_KEY --stdio");
         console.error("  echo 'FIGMA_API_KEY=YOUR_KEY' > .env && npx figma-flutter-mcp --stdio");
-        console.error("  npx figma-flutter-mcp --remote  # Users provide keys via HTTP headers");
+        console.error("  npx figma-flutter-mcp --figma-api-key=YOUR_KEY --remote");
         process.exit(1);
     }
 
