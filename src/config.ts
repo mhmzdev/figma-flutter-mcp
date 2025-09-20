@@ -4,16 +4,18 @@ import {hideBin} from "yargs/helpers";
 import {resolve} from "path";
 
 export interface ServerConfig {
-    figmaApiKey: string;
+    figmaApiKey?: string;
     outputFormat: "yaml" | "json";
     isStdioMode: boolean;
     isHttpMode: boolean;
+    isRemoteMode: boolean;
     httpPort: number;
     configSources: {
-        figmaApiKey: "cli" | "env";
+        figmaApiKey: "cli" | "env" | "none";
         envFile: "cli" | "default";
         stdio: "cli" | "env" | "default";
         http: "cli" | "env" | "default";
+        remote: "cli" | "env" | "default";
         port: "cli" | "env" | "default";
     };
 }
@@ -28,6 +30,7 @@ interface CliArgs {
     env?: string;
     stdio?: boolean;
     http?: boolean;
+    remote?: boolean;
     port?: number;
 }
 
@@ -37,7 +40,7 @@ export function getServerConfig(): ServerConfig {
         .options({
             "figma-api-key": {
                 type: "string",
-                description: "Figma API key",
+                description: "Your Figma API key (can also be set via FIGMA_API_KEY env var)",
             },
             env: {
                 type: "string",
@@ -51,6 +54,11 @@ export function getServerConfig(): ServerConfig {
             http: {
                 type: "boolean",
                 description: "Run in HTTP mode for local testing",
+                default: false,
+            },
+            remote: {
+                type: "boolean",
+                description: "Run in remote mode - users provide their own Figma API keys",
                 default: false,
             },
             port: {
@@ -79,21 +87,23 @@ export function getServerConfig(): ServerConfig {
     loadEnv({path: envFilePath, override: !!argv.env});
 
     const config: ServerConfig = {
-        figmaApiKey: "",
+        figmaApiKey: undefined,
         outputFormat: "json",
         isStdioMode: false,
         isHttpMode: false,
+        isRemoteMode: false,
         httpPort: 3333,
         configSources: {
-            figmaApiKey: "env",
+            figmaApiKey: "none",
             envFile: envFileSource,
             stdio: "default",
             http: "default",
+            remote: "default",
             port: "default",
         },
     };
 
-    // Handle FIGMA_API_KEY
+    // Handle FIGMA_API_KEY - Users must provide their own API key
     if (argv["figma-api-key"]) {
         config.figmaApiKey = argv["figma-api-key"];
         config.configSources.figmaApiKey = "cli";
@@ -101,6 +111,7 @@ export function getServerConfig(): ServerConfig {
         config.figmaApiKey = process.env.FIGMA_API_KEY;
         config.configSources.figmaApiKey = "env";
     }
+    // Users can provide API key via CLI args, .env file, or HTTP headers (in remote mode)
 
     // Handle stdio mode
     if (argv.stdio) {
@@ -120,6 +131,17 @@ export function getServerConfig(): ServerConfig {
         config.configSources.http = "env";
     }
 
+    // Handle remote mode
+    if (argv.remote) {
+        config.isRemoteMode = true;
+        config.isHttpMode = true; // Remote mode implies HTTP mode
+        config.configSources.remote = "cli";
+    } else if (process.env.REMOTE_MODE === "true") {
+        config.isRemoteMode = true;
+        config.isHttpMode = true; // Remote mode implies HTTP mode
+        config.configSources.remote = "env";
+    }
+
     // Handle port configuration
     if (argv.port) {
         config.httpPort = argv.port;
@@ -129,9 +151,19 @@ export function getServerConfig(): ServerConfig {
         config.configSources.port = "env";
     }
 
-    // Validate configuration
-    if (!config.figmaApiKey) {
-        console.error("Error: FIGMA_API_KEY is required (via CLI argument or .env file)");
+    // Validate configuration - Users must provide their own API key for ALL modes except remote
+    if (!config.figmaApiKey && !config.isRemoteMode) {
+        console.error("Error: FIGMA_API_KEY is required.");
+        console.error("Please provide your Figma API key via one of these methods:");
+        console.error("  1. CLI argument: --figma-api-key=YOUR_API_KEY");
+        console.error("  2. Environment variable: FIGMA_API_KEY=YOUR_API_KEY in .env file");
+        console.error("");
+        console.error("Get your API key from: https://help.figma.com/hc/en-us/articles/8085703771159-Manage-personal-access-tokens");
+        console.error("");
+        console.error("Examples:");
+        console.error("  npx figma-flutter-mcp --figma-api-key=YOUR_KEY --stdio");
+        console.error("  echo 'FIGMA_API_KEY=YOUR_KEY' > .env && npx figma-flutter-mcp --stdio");
+        console.error("  npx figma-flutter-mcp --remote  # Users provide keys via HTTP headers");
         process.exit(1);
     }
 
@@ -139,11 +171,16 @@ export function getServerConfig(): ServerConfig {
     if (!config.isStdioMode) {
         console.log("\nConfiguration:");
         console.log(`- ENV_FILE: ${envFilePath} (source: ${config.configSources.envFile})`);
-        console.log(
-            `- FIGMA_API_KEY: ${maskApiKey(config.figmaApiKey)} (source: ${config.configSources.figmaApiKey})`
-        );
+        if (config.figmaApiKey) {
+            console.log(
+                `- FIGMA_API_KEY: ${maskApiKey(config.figmaApiKey)} (source: ${config.configSources.figmaApiKey})`
+            );
+        } else {
+            console.log(`- FIGMA_API_KEY: Not set - users will provide their own (source: ${config.configSources.figmaApiKey})`);
+        }
         console.log(`- STDIO_MODE: ${config.isStdioMode} (source: ${config.configSources.stdio})`);
         console.log(`- HTTP_MODE: ${config.isHttpMode} (source: ${config.configSources.http})`);
+        console.log(`- REMOTE_MODE: ${config.isRemoteMode} (source: ${config.configSources.remote})`);
         if (config.isHttpMode) {
             console.log(`- HTTP_PORT: ${config.httpPort} (source: ${config.configSources.port})`);
         }

@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import express, { type Request, type Response } from "express";
 import { Server } from "http";
+import cors from "cors";
 import {McpServer} from "@modelcontextprotocol/sdk/server/mcp.js";
 import {StdioServerTransport} from "@modelcontextprotocol/sdk/server/stdio.js";
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
@@ -19,11 +20,43 @@ export function createServer(figmaApiKey: string) {
     return server;
 }
 
+// Create a server instance that can handle per-user API keys
+export function createServerForUser(figmaApiKey: string) {
+    return createServer(figmaApiKey);
+}
+
 let httpServer: Server | null = null;
 const transports = {
   streamable: {} as Record<string, StreamableHTTPServerTransport>,
   sse: {} as Record<string, SSEServerTransport>,
 };
+
+// Store MCP server instances per session (for per-user API keys)
+const sessionServers = {} as Record<string, McpServer>;
+
+// Helper function to extract Figma API key from request
+function extractFigmaApiKey(req: Request, fallbackApiKey?: string): string | null {
+  // Try to get from Authorization header (Bearer token)
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    return authHeader.substring(7);
+  }
+  
+  // Try to get from custom header
+  const figmaApiKey = req.headers['x-figma-api-key'] as string;
+  if (figmaApiKey) {
+    return figmaApiKey;
+  }
+  
+  // Try to get from query parameter (less secure, but convenient for testing)
+  const queryApiKey = req.query.figmaApiKey as string;
+  if (queryApiKey) { 
+    return queryApiKey;
+  }
+  
+  // Fall back to server-wide API key (only for non-remote HTTP mode)
+  return fallbackApiKey || null;
+}
 
 export async function startMcpServer(figmaApiKey: string): Promise<void> {
     try {
@@ -37,9 +70,17 @@ export async function startMcpServer(figmaApiKey: string): Promise<void> {
     }
 }
 
-export async function startHttpServer(port: number, figmaApiKey: string): Promise<void> {
-  const mcpServer = createServer(figmaApiKey);
+export async function startHttpServer(port: number, figmaApiKey?: string): Promise<void> {
+  // For remote mode, we don't create a single server instance
+  // Instead, we create per-user servers based on their API keys
+  // For non-remote HTTP mode, we use the provided API key
   const app = express();
+
+  // Configure CORS to expose Mcp-Session-Id header for browser-based clients
+  app.use(cors({
+    origin: '*', // Allow all origins - adjust as needed for production
+    exposedHeaders: ['Mcp-Session-Id']
+  }));
 
   // Parse JSON requests for the Streamable HTTP endpoint only, will break SSE endpoint
   app.use("/mcp", express.json());
@@ -49,39 +90,70 @@ export async function startHttpServer(port: number, figmaApiKey: string): Promis
     Logger.log("Received StreamableHTTP request");
     const sessionId = req.headers["mcp-session-id"] as string | undefined;
     
+    // Extract Figma API key from request
+    const userFigmaApiKey = extractFigmaApiKey(req, figmaApiKey);
+    if (!userFigmaApiKey) {
+      res.status(401).json({
+        jsonrpc: "2.0",
+        error: {
+          code: -32001,
+          message: "Unauthorized: Figma API key required. You must provide your own Figma API key via Authorization header (Bearer token), X-Figma-Api-Key header, or figmaApiKey query parameter. Get your API key from: https://help.figma.com/hc/en-us/articles/8085703771159-Manage-personal-access-tokens",
+        },
+        id: null,
+      });
+      return;
+    }
+    
     let transport: StreamableHTTPServerTransport;
+    let mcpServer: McpServer;
 
     if (sessionId && transports.streamable[sessionId]) {
-      // Reuse existing transport
+      // Reuse existing transport and server
       Logger.log("Reusing existing StreamableHTTP transport for sessionId", sessionId);
       transport = transports.streamable[sessionId];
+      mcpServer = sessionServers[sessionId];
     } else if (isInitializeRequest(req.body)) {
-      Logger.log("New initialization request for StreamableHTTP sessionId", sessionId);
+      Logger.log("New initialization request for StreamableHTTP");
+      
+      // Create new server instance for this user's API key
+      mcpServer = createServerForUser(userFigmaApiKey);
+      
       transport = new StreamableHTTPServerTransport({
         sessionIdGenerator: () => randomUUID(),
-        onsessioninitialized: (sessionId) => {
-          // Store the transport by session ID
-          transports.streamable[sessionId] = transport;
+        enableJsonResponse: true, // Enable JSON response mode for better remote compatibility
+        onsessioninitialized: (newSessionId) => {
+          // Store the transport and server by session ID
+          transports.streamable[newSessionId] = transport;
+          sessionServers[newSessionId] = mcpServer;
+          Logger.log("Session initialized with ID:", newSessionId);
         },
       });
       transport.onclose = () => {
         if (transport.sessionId) {
           delete transports.streamable[transport.sessionId];
+          delete sessionServers[transport.sessionId];
         }
       };
       await mcpServer.connect(transport);
     } else if (sessionId) {
       // Session ID provided but transport not found - create new one
       Logger.log("Creating new transport for existing sessionId", sessionId);
+      
+      // Create new server instance for this user's API key
+      mcpServer = createServerForUser(userFigmaApiKey);
+      
       transport = new StreamableHTTPServerTransport({
         sessionIdGenerator: () => sessionId,
+        enableJsonResponse: true, // Enable JSON response mode for better remote compatibility
         onsessioninitialized: (newSessionId) => {
           transports.streamable[newSessionId] = transport;
+          sessionServers[newSessionId] = mcpServer;
         },
       });
       transport.onclose = () => {
         if (transport.sessionId) {
           delete transports.streamable[transport.sessionId];
+          delete sessionServers[transport.sessionId];
         }
       };
       await mcpServer.connect(transport);
@@ -157,12 +229,28 @@ export async function startHttpServer(port: number, figmaApiKey: string): Promis
 
   app.get("/sse", async (req, res) => {
     Logger.log("Establishing new SSE connection");
+    
+    // Extract Figma API key from request
+    const userFigmaApiKey = extractFigmaApiKey(req, figmaApiKey);
+    if (!userFigmaApiKey) {
+      res.status(401).json({
+        error: "Unauthorized: Figma API key required. You must provide your own Figma API key via Authorization header (Bearer token), X-Figma-Api-Key header, or figmaApiKey query parameter. Get your API key from: https://help.figma.com/hc/en-us/articles/8085703771159-Manage-personal-access-tokens",
+      });
+      return;
+    }
+    
     const transport = new SSEServerTransport("/messages", res);
     Logger.log(`New SSE connection established for sessionId ${transport.sessionId}`);
 
+    // Create server instance for this user's API key
+    const mcpServer = createServerForUser(userFigmaApiKey);
+
     transports.sse[transport.sessionId] = transport;
+    sessionServers[transport.sessionId] = mcpServer;
+    
     res.on("close", () => {
       delete transports.sse[transport.sessionId];
+      delete sessionServers[transport.sessionId];
     });
 
     await mcpServer.connect(transport);
