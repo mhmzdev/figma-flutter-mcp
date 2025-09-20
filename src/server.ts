@@ -4,7 +4,6 @@ import { Server } from "http";
 import cors from "cors";
 import {McpServer} from "@modelcontextprotocol/sdk/server/mcp.js";
 import {StdioServerTransport} from "@modelcontextprotocol/sdk/server/stdio.js";
-import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 import {registerAllTools} from "./tools/index.js";
@@ -28,7 +27,6 @@ export function createServerForUser(figmaApiKey: string) {
 let httpServer: Server | null = null;
 const transports = {
   streamable: {} as Record<string, StreamableHTTPServerTransport>,
-  sse: {} as Record<string, SSEServerTransport>,
 };
 
 // Store MCP server instances per session (for per-user API keys)
@@ -227,51 +225,8 @@ export async function startHttpServer(port: number, figmaApiKey?: string): Promi
   // Handle DELETE requests for session termination
   app.delete("/mcp", handleSessionRequest);
 
-  app.get("/sse", async (req, res) => {
-    Logger.log("Establishing new SSE connection");
-    
-    // Extract Figma API key from request
-    const userFigmaApiKey = extractFigmaApiKey(req, figmaApiKey);
-    if (!userFigmaApiKey) {
-      res.status(401).json({
-        error: "Unauthorized: Figma API key required. You must provide your own Figma API key via Authorization header (Bearer token), X-Figma-Api-Key header, or figmaApiKey query parameter. Get your API key from: https://help.figma.com/hc/en-us/articles/8085703771159-Manage-personal-access-tokens",
-      });
-      return;
-    }
-    
-    const transport = new SSEServerTransport("/messages", res);
-    Logger.log(`New SSE connection established for sessionId ${transport.sessionId}`);
-
-    // Create server instance for this user's API key
-    const mcpServer = createServerForUser(userFigmaApiKey);
-
-    transports.sse[transport.sessionId] = transport;
-    sessionServers[transport.sessionId] = mcpServer;
-    
-    res.on("close", () => {
-      delete transports.sse[transport.sessionId];
-      delete sessionServers[transport.sessionId];
-    });
-
-    await mcpServer.connect(transport);
-  });
-
-  app.post("/messages", async (req, res) => {
-    const sessionId = req.query.sessionId as string;
-    const transport = transports.sse[sessionId];
-    if (transport) {
-      Logger.log(`Received SSE message for sessionId ${sessionId}`);
-      await transport.handlePostMessage(req, res);
-    } else {
-      res.status(400).send(`No transport found for sessionId ${sessionId}`);
-      return;
-    }
-  });
-
   httpServer = app.listen(port, () => {
     Logger.log(`HTTP server listening on port ${port}`);
-    Logger.log(`SSE endpoint available at http://localhost:${port}/sse`);
-    Logger.log(`Message endpoint available at http://localhost:${port}/messages`);
     Logger.log(`StreamableHTTP endpoint available at http://localhost:${port}/mcp`);
   });
 
@@ -279,7 +234,6 @@ export async function startHttpServer(port: number, figmaApiKey?: string): Promi
     Logger.log("Shutting down server...");
 
     // Close all active transports to properly clean up resources
-    await closeTransports(transports.sse);
     await closeTransports(transports.streamable);
 
     Logger.log("Server shutdown complete");
@@ -288,7 +242,7 @@ export async function startHttpServer(port: number, figmaApiKey?: string): Promi
 }
 
 async function closeTransports(
-  transports: Record<string, SSEServerTransport | StreamableHTTPServerTransport>,
+  transports: Record<string, StreamableHTTPServerTransport>,
 ) {
   for (const sessionId in transports) {
     try {
@@ -312,7 +266,7 @@ export async function stopHttpServer(): Promise<void> {
         return;
       }
       httpServer = null;
-      const closing = Object.values(transports.sse).map((transport) => {
+      const closing = Object.values(transports.streamable).map((transport) => {
         return transport.close();
       });
       Promise.all(closing).then(() => {
