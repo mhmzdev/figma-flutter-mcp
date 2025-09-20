@@ -324,6 +324,16 @@ export function generateStyleLibraryReport(): string {
   output += `📊 Library Statistics:\n`;
   output += `   • Total unique styles: ${allStyles.length}\n`;
   
+  // Show optimization info
+  const hierarchy = styleLibrary.getStyleHierarchy();
+  const hierarchyCount = Object.keys(hierarchy).filter(id => 
+    hierarchy[id].parentId || hierarchy[id].childIds.length > 0
+  ).length;
+  
+  if (hierarchyCount > 0) {
+    output += `   • Styles with relationships: ${hierarchyCount}\n`;
+  }
+  
   // Category breakdown
   const categoryStats = allStyles.reduce((acc, style) => {
     acc[style.category] = (acc[style.category] || 0) + 1;

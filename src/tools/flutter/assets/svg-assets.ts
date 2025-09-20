@@ -19,7 +19,7 @@ export function registerSvgAssetTools(server: McpServer, figmaApiKey: string) {
         "export_svg_flutter_assets",
         {
             title: "Export SVG Flutter Assets",
-            description: "Export SVG assets from Figma nodes (groups with vector children) and set up Flutter SVG assets directory",
+            description: "Export SVG assets from Figma nodes. Detects SVG content by analyzing vector percentage - nodes with >30% vector content are considered SVG assets. Handles nested GROUP/FRAME structures with mixed content.",
             inputSchema: {
                 fileId: z.string().describe("Figma file ID"),
                 nodeIds: z.array(z.string()).describe("Array of node IDs to export as SVG assets"),
@@ -47,7 +47,11 @@ export function registerSvgAssetTools(server: McpServer, figmaApiKey: string) {
                     return {
                         content: [{
                             type: "text",
-                            text: "No SVG assets found in the specified nodes. Looking for groups or frames containing vector graphics."
+                            text: "No SVG assets found in the specified nodes. SVG detection looks for:\n" +
+                                  "- Direct VECTOR or BOOLEAN_OPERATION nodes\n" +
+                                  "- GROUP/FRAME/COMPONENT/INSTANCE nodes with ≥30% vector content\n" +
+                                  "- Nodes created with pen tool\n\n" +
+                                  "Check the console logs for detailed analysis of each node's vector percentage."
                         }]
                     };
                 }
@@ -96,8 +100,10 @@ export function registerSvgAssetTools(server: McpServer, figmaApiKey: string) {
                 output += `SVG Assets Directory: ${assetsDir}\n\n`;
                 output += `Downloaded SVG Assets:\n`;
 
-                downloadedAssets.forEach(asset => {
-                    output += `- ${asset.filename} (${asset.size})\n`;
+                downloadedAssets.forEach((asset, index) => {
+                    const svgNode = svgNodes.find(n => n.id === asset.nodeId);
+                    const vectorInfo = svgNode?.vectorPercentage ? ` | Vector: ${(svgNode.vectorPercentage * 100).toFixed(1)}%` : '';
+                    output += `- ${asset.filename} (${asset.size})${vectorInfo}\n`;
                 });
 
                 output += `\nPubspec Configuration:\n`;
@@ -127,74 +133,62 @@ export function registerSvgAssetTools(server: McpServer, figmaApiKey: string) {
     );
 }
 
-// Helper function to filter SVG nodes (groups/frames with vector children)
-async function filterSvgNodes(fileId: string, targetNodeIds: string[], figmaService: any): Promise<Array<{id: string, name: string, node: any}>> {
+// Helper function to filter SVG nodes with enhanced detection
+async function filterSvgNodes(fileId: string, targetNodeIds: string[], figmaService: any): Promise<Array<{id: string, name: string, node: any, vectorPercentage?: number}>> {
     // Get the target nodes
     const targetNodes = await figmaService.getNodes(fileId, targetNodeIds);
     
-    const svgNodes: Array<{id: string, name: string, node: any}> = [];
+    const svgNodes: Array<{id: string, name: string, node: any, vectorPercentage?: number}> = [];
+    const analysisResults: Array<{id: string, name: string, type: string, vectorPercentage: number, isSvg: boolean}> = [];
 
     for (const nodeId of targetNodeIds) {
         const node = targetNodes[nodeId];
         if (!node) continue;
 
+        // Calculate vector percentage for analysis
+        let vectorPercentage = 0;
+        if (node.type === 'VECTOR' || node.type === 'BOOLEAN_OPERATION') {
+            vectorPercentage = 1.0; // 100% vector
+        } else if (node.type === 'GROUP' || node.type === 'FRAME' || node.type === 'COMPONENT' || node.type === 'INSTANCE') {
+            vectorPercentage = calculateVectorPercentage(node);
+        }
+
+        const isSvg = isSvgNode(node);
+        
+        // Store analysis results for debugging
+        analysisResults.push({
+            id: nodeId,
+            name: node.name,
+            type: node.type,
+            vectorPercentage: Math.round(vectorPercentage * 100) / 100, // Round to 2 decimal places
+            isSvg
+        });
+
         // Check if this is a potential SVG node
-        if (isSvgNode(node)) {
+        if (isSvg) {
             svgNodes.push({
                 id: nodeId,
                 name: node.name,
-                node: node
+                node: node,
+                vectorPercentage
             });
         }
     }
+
+    // Log analysis results for debugging (this will help users understand why nodes were/weren't selected)
+    console.log('SVG Node Analysis Results:');
+    analysisResults.forEach(result => {
+        const status = result.isSvg ? '✓ SVG' : '✗ Not SVG';
+        console.log(` 🎨 ${status} | ${result.name} (${result.type}) | Vector: ${(result.vectorPercentage * 100).toFixed(1)}%`);
+    });
 
     return svgNodes;
 }
 
 function isSvgNode(node: any): boolean {
-    // SVG nodes are typically:
-    // 1. Groups or Frames that contain vector children
-    // 2. Single vector nodes
-    // 3. Components that are primarily vector-based
-    // 4. Component instances that contain vector children
-    // 5. Nodes created with pen tool (have vector paths)
-    
-    if (node.type === 'VECTOR') {
+    // Direct vector nodes are always SVG
+    if (node.type === 'VECTOR' || node.type === 'BOOLEAN_OPERATION') {
         return true;
-    }
-
-    if (node.type === 'BOOLEAN_OPERATION') {
-        return true;
-    }
-
-    if (node.type === 'GROUP' || node.type === 'FRAME' || node.type === 'COMPONENT' || node.type === 'INSTANCE') {
-        // Check if it has vector children or is primarily vector-based
-        if (node.children && node.children.length > 0) {
-            const vectorChildren = node.children.filter((child: any) => 
-                child.type === 'VECTOR' || 
-                child.type === 'BOOLEAN_OPERATION' ||
-                (child.type === 'GROUP' && hasVectorDescendants(child)) ||
-                (child.type === 'INSTANCE' && hasVectorDescendants(child)) ||
-                isPenToolNode(child)
-            );
-            
-            // Also check for pen tool usage in the node itself or its children
-            const hasPenToolElements = hasPenToolDescendants(node);
-            
-            // For INSTANCE nodes, be more lenient - if it has any vector children, consider it SVG
-            if (node.type === 'INSTANCE' && vectorChildren.length > 0) {
-                return true;
-            }
-            
-            // Consider it an SVG if:
-            // - It has vector children, OR
-            // - It contains pen tool elements, OR  
-            // - Most children are vectors
-            return (vectorChildren.length > 0 && (
-                vectorChildren.length === node.children.length || // All children are vectors
-                vectorChildren.length / node.children.length >= 0.5 // At least 50% are vectors
-            )) || hasPenToolElements;
-        }
     }
 
     // Check if the node itself is created with pen tool
@@ -202,29 +196,106 @@ function isSvgNode(node: any): boolean {
         return true;
     }
 
+    // For container nodes (GROUP, FRAME, COMPONENT, INSTANCE), calculate vector percentage
+    if (node.type === 'GROUP' || node.type === 'FRAME' || node.type === 'COMPONENT' || node.type === 'INSTANCE') {
+        const vectorPercentage = calculateVectorPercentage(node);
+        
+        // Consider it SVG if more than 25% of the content is vector-based
+        return vectorPercentage >= 0.25;
+    }
+
     return false;
 }
 
-function hasVectorDescendants(node: any): boolean {
+/**
+ * Calculate the percentage of vector content in a node and its descendants
+ * @param node The node to analyze
+ * @returns A number between 0 and 1 representing the percentage of vector content
+ */
+function calculateVectorPercentage(node: any): number {
+    const nodeStats = analyzeNodeComposition(node);
+    
+    if (nodeStats.totalNodes === 0) {
+        return 0;
+    }
+    
+    return nodeStats.vectorNodes / nodeStats.totalNodes;
+}
+
+/**
+ * Recursively analyze the composition of a node and its descendants
+ * @param node The node to analyze
+ * @returns Object with counts of total nodes and vector nodes
+ */
+function analyzeNodeComposition(node: any): { totalNodes: number; vectorNodes: number } {
+    let totalNodes = 1; // Count the current node
+    let vectorNodes = 0;
+    
+    // Check if current node is vector-based
+    if (isVectorBasedNode(node)) {
+        vectorNodes = 1;
+    }
+    
+    // Recursively analyze children
+    if (node.children && Array.isArray(node.children)) {
+        for (const child of node.children) {
+            const childStats = analyzeNodeComposition(child);
+            totalNodes += childStats.totalNodes;
+            vectorNodes += childStats.vectorNodes;
+        }
+    }
+    
+    return { totalNodes, vectorNodes };
+}
+
+/**
+ * Check if a single node is vector-based (without considering children)
+ * @param node The node to check
+ * @returns True if the node is vector-based
+ */
+function isVectorBasedNode(node: any): boolean {
+    // Direct vector types
     if (node.type === 'VECTOR' || node.type === 'BOOLEAN_OPERATION') {
         return true;
     }
     
-    // INSTANCE nodes can contain vector children
-    if (node.type === 'INSTANCE' && node.children) {
-        return node.children.some((child: any) => 
-            child.type === 'VECTOR' || 
-            child.type === 'BOOLEAN_OPERATION' ||
-            hasVectorDescendants(child)
-        );
+    // Pen tool created nodes
+    if (isPenToolNode(node)) {
+        return true;
     }
     
-    if (node.children) {
-        return node.children.some((child: any) => hasVectorDescendants(child));
+    // Some instances might be vector-based components
+    if (node.type === 'INSTANCE') {
+        // If an instance has vector-like properties, consider it vector-based
+        return hasVectorLikeProperties(node);
     }
     
     return false;
 }
+
+/**
+ * Check if a node has vector-like properties (for instances and other edge cases)
+ * @param node The node to check
+ * @returns True if the node has vector-like properties
+ */
+function hasVectorLikeProperties(node: any): boolean {
+    // Check for vector-like fills or strokes
+    const hasVectorFills = node.fills && node.fills.some((fill: any) => 
+        fill.type === 'SOLID' || fill.type === 'GRADIENT_LINEAR' || fill.type === 'GRADIENT_RADIAL'
+    );
+    
+    const hasVectorStrokes = node.strokes && node.strokes.some((stroke: any) => 
+        stroke.type === 'SOLID' && stroke.visible !== false
+    );
+    
+    // Check for vector network or path data
+    const hasVectorNetwork = node.vectorNetwork && 
+        node.vectorNetwork.vertices && 
+        node.vectorNetwork.segments;
+    
+    return hasVectorNetwork || (hasVectorFills && hasVectorStrokes);
+}
+
 
 function isPenToolNode(node: any): boolean {
     // Check if this node was created with the pen tool

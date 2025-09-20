@@ -3,6 +3,7 @@
 import type { FigmaNode } from '../../types/figma.js';
 import type { FlutterStyleDefinition } from '../flutter/style-library.js';
 import { FlutterStyleLibrary } from '../flutter/style-library.js';
+import { GlobalStyleManager } from '../flutter/global-vars.js';
 import { 
   extractStylingInfo, 
   extractLayoutInfo, 
@@ -37,6 +38,7 @@ export interface DeduplicatedComponentChild {
 
 export class DeduplicatedComponentExtractor {
   private styleLibrary = FlutterStyleLibrary.getInstance();
+  private globalStyleManager = new GlobalStyleManager();
   
   async analyzeComponent(node: FigmaNode, trackNewStyles = false): Promise<DeduplicatedComponentAnalysis> {
     const styling = extractStylingInfo(node);
@@ -46,23 +48,23 @@ export class DeduplicatedComponentExtractor {
     const styleRefs: Record<string, string> = {};
     const newStyles = new Set<string>();
     
-    // Process decoration styles
+    // Process decoration styles using the enhanced global style manager
     if (this.hasDecorationProperties(styling)) {
       const beforeCount = this.styleLibrary.getAllStyles().length;
-      styleRefs.decoration = this.styleLibrary.addStyle('decoration', {
+      styleRefs.decoration = this.globalStyleManager.addStyle({
         fills: styling.fills,
         cornerRadius: styling.cornerRadius,
         effects: styling.effects
-      });
+      }, 'decoration');
       if (trackNewStyles && this.styleLibrary.getAllStyles().length > beforeCount) {
         newStyles.add(styleRefs.decoration);
       }
     }
     
-    // Process padding styles
+    // Process padding styles using the enhanced global style manager
     if (layout.padding) {
       const beforeCount = this.styleLibrary.getAllStyles().length;
-      styleRefs.padding = this.styleLibrary.addStyle('padding', { padding: layout.padding });
+      styleRefs.padding = this.globalStyleManager.addStyle({ padding: layout.padding }, 'padding');
       if (trackNewStyles && this.styleLibrary.getAllStyles().length > beforeCount) {
         newStyles.add(styleRefs.padding);
       }
@@ -96,31 +98,31 @@ export class DeduplicatedComponentExtractor {
       
       const childStyleRefs: string[] = [];
       
-      // Extract child styling
+      // Extract child styling using enhanced global style manager
       const childStyling = extractStylingInfo(child);
       if (this.hasDecorationProperties(childStyling)) {
-        const decorationRef = this.styleLibrary.addStyle('decoration', {
+        const decorationRef = this.globalStyleManager.addStyle({
           fills: childStyling.fills,
           cornerRadius: childStyling.cornerRadius,
           effects: childStyling.effects
-        });
+        }, 'decoration');
         childStyleRefs.push(decorationRef);
       }
       
-      // Extract text styling for text nodes
+      // Extract text styling for text nodes using enhanced global style manager
       let textContent: string | undefined;
       if (child.type === 'TEXT') {
         const textInfo = extractTextInfo(child);
         if (textInfo) {
           textContent = textInfo.content;
           
-          // Add text style to library
+          // Add text style to library using enhanced deduplication
           if (child.style) {
-            const textStyleRef = this.styleLibrary.addStyle('text', {
+            const textStyleRef = this.globalStyleManager.addStyle({
               fontFamily: child.style.fontFamily,
               fontSize: child.style.fontSize,
               fontWeight: child.style.fontWeight
-            });
+            }, 'text');
             childStyleRefs.push(textStyleRef);
           }
         }

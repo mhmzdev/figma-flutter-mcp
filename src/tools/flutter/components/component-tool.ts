@@ -12,7 +12,8 @@ import {
     DeduplicatedComponentExtractor,
     type DeduplicatedComponentAnalysis
 } from "../../../extractors/components/index.js";
-import {FlutterStyleLibrary} from "../../../extractors/flutter/style-library.js";
+import {FlutterStyleLibrary, OptimizationReport} from "../../../extractors/flutter/style-library.js";
+import {Logger} from "../../../utils/logger.js";
 
 import {
     generateVariantSelectionPrompt,
@@ -57,10 +58,11 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
                 exportAssets: z.boolean().optional().describe("Automatically export image assets found in component (default: true)"),
                 useDeduplication: z.boolean().optional().describe("Use style deduplication for token efficiency (default: true)"),
                 generateFlutterCode: z.boolean().optional().describe("Generate full Flutter implementation code (default: false)"),
-                resetStyleLibrary: z.boolean().optional().describe("Reset style library before analysis (default: false)")
+                resetStyleLibrary: z.boolean().optional().describe("Reset style library before analysis (default: false)"),
+                autoOptimize: z.boolean().optional().describe("Auto-optimize style library during analysis (default: true)")
             }
         },
-        async ({input, nodeId, userDefinedComponent = false, maxChildNodes = 10, includeVariants = true, variantSelection, projectPath = process.cwd(), exportAssets = true, useDeduplication = true, generateFlutterCode = false, resetStyleLibrary = false}) => {
+        async ({input, nodeId, userDefinedComponent = false, maxChildNodes = 10, includeVariants = true, variantSelection, projectPath = process.cwd(), exportAssets = true, useDeduplication = true, generateFlutterCode = false, resetStyleLibrary = false, autoOptimize = true}) => {
             const token = figmaApiKey;
             if (!token) {
                 return {
@@ -73,9 +75,22 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
 
             try {
                 // Reset style library if requested
+                const styleLibrary = FlutterStyleLibrary.getInstance();
+                
                 if (resetStyleLibrary) {
-                    FlutterStyleLibrary.getInstance().reset();
+                    styleLibrary.reset();
                 }
+                
+                // Configure auto-optimization
+                styleLibrary.setAutoOptimization(autoOptimize);
+                
+                Logger.info(`🎯 Component Analysis Started:`, {
+                    input: input.substring(0, 50) + '...',
+                    nodeId,
+                    useDeduplication,
+                    autoOptimize,
+                    resetStyleLibrary
+                });
 
                 // Parse input to get file ID and node ID
                 const parsedInput = parseComponentInput(input, nodeId);
@@ -170,6 +185,7 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
                 let analysisReport: string;
 
                 if (useDeduplication) {
+                    Logger.info(`🔧 Using enhanced deduplication for component analysis`);
                     // Use deduplicated extractor
                     const deduplicatedExtractor = new DeduplicatedComponentExtractor();
                     let deduplicatedAnalysis: DeduplicatedComponentAnalysis;
@@ -189,6 +205,13 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
                         deduplicatedAnalysis = await deduplicatedExtractor.analyzeComponent(componentNode, true);
                     }
 
+                    Logger.info(`📊 Deduplication analysis complete:`, {
+                        styleRefs: Object.keys(deduplicatedAnalysis.styleRefs).length,
+                        children: deduplicatedAnalysis.children.length,
+                        nestedComponents: deduplicatedAnalysis.nestedComponents.length,
+                        newStyleDefinitions: deduplicatedAnalysis.newStyleDefinitions ? Object.keys(deduplicatedAnalysis.newStyleDefinitions).length : 0
+                    });
+                    
                     analysisReport = generateComprehensiveDeduplicatedReport(deduplicatedAnalysis, true);
                     
                     // Add visual context for deduplicated analysis
