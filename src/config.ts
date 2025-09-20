@@ -2,6 +2,9 @@ import {config as loadEnv} from "dotenv";
 import yargs from "yargs";
 import {hideBin} from "yargs/helpers";
 import {resolve} from "path";
+import {readFileSync} from "fs";
+import {fileURLToPath} from "url";
+import {dirname, join} from "path";
 
 export interface ServerConfig {
     figmaApiKey?: string;
@@ -23,6 +26,22 @@ export interface ServerConfig {
 function maskApiKey(key: string): string {
     if (!key || key.length <= 4) return "****";
     return `****${key.slice(-4)}`;
+}
+
+function getPackageVersion(): string {
+    try {
+        // Get the directory of the current module
+        const __filename = fileURLToPath(import.meta.url);
+        const __dirname = dirname(__filename);
+        
+        // Read package.json from the project root (one level up from src)
+        const packageJsonPath = join(__dirname, '..', 'package.json');
+        const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'));
+        return packageJson.version || '0.0.1';
+    } catch (error) {
+        // Fallback to environment variable or default
+        return process.env.npm_package_version || '0.0.1';
+    }
 }
 
 interface CliArgs {
@@ -68,7 +87,7 @@ export function getServerConfig(): ServerConfig {
             },
         })
         .help()
-        .version(process.env.npm_package_version || "0.0.1")
+        .version(getPackageVersion())
         .parseSync() as CliArgs;
 
     // Load environment variables from custom path or default
