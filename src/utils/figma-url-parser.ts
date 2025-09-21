@@ -22,45 +22,18 @@ export interface ComponentInput {
  */
 export function parseComponentInput(input: string, nodeId?: string): ComponentInput {
     try {
-        // If nodeId is provided separately, treat as direct input
-        if (nodeId) {
-            const validatedFileId = validateFileId(input.trim());
-            const validatedNodeId = validateAndConvertNodeId(nodeId.trim());
-
-            return {
-                fileId: validatedFileId,
-                nodeId: validatedNodeId,
-                source: 'direct',
-                isValid: true
-            };
+        // The input should always be a Figma URL that developers copy-paste
+        if (!input.includes('figma.com')) {
+            throw new FigmaError('Expected a Figma URL (e.g., https://www.figma.com/design/...)', 'INVALID_INPUT');
         }
 
-        // Try to parse as URL first
-        if (input.includes('figma.com')) {
-            return parseFromUrl(input);
-        }
-
-        // Check if it's in fileId:nodeId format
-        if (input.includes(':') && input.split(':').length === 2) {
-            const [fileIdPart, nodeIdPart] = input.split(':');
-            const validatedFileId = validateFileId(fileIdPart.trim());
-            const validatedNodeId = validateAndConvertNodeId(`${fileIdPart.trim()}:${nodeIdPart.trim()}`);
-
-            return {
-                fileId: validatedFileId,
-                nodeId: validatedNodeId,
-                source: 'direct',
-                isValid: true
-            };
-        }
-
-        throw new FigmaError('Invalid input format. Expected Figma URL or fileId:nodeId format', 'INVALID_INPUT');
+        return parseFromUrl(input);
 
     } catch (error) {
         return {
             fileId: '',
             nodeId: '',
-            source: 'direct',
+            source: 'url',
             isValid: false,
             error: error instanceof Error ? error.message : String(error)
         };
