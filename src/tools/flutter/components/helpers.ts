@@ -468,17 +468,4 @@ export function hasVisualStyling(styling: any): boolean {
         styling.cornerRadius !== undefined || styling.effects?.dropShadows?.length);
 }
 
-export function toPascalCase(str: string): string {
-    return str
-        .replace(/[^a-zA-Z0-9]/g, ' ')
-        .replace(/\w+/g, (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-        .replace(/\s/g, '');
-}
-
-export function rgbaToHex(color: {r: number; g: number; b: number; a?: number}): string {
-    const r = Math.round(color.r * 255);
-    const g = Math.round(color.g * 255);
-    const b = Math.round(color.b * 255);
-
-    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`.toUpperCase();
-}
+import { toPascalCase, rgbaToHex } from "../../../utils/helpers.js";

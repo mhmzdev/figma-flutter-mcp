@@ -266,9 +266,9 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
                 if (exportAssets) {
                     try {
                         // Use the existing filterImageNodes logic from assets.mts
-                        const imageNodes = await filterImageNodesInComponent(parsedInput.fileId, [parsedInput.nodeId], figmaService);
+                        const imageNodes = await filterImageNodes(parsedInput.fileId, [parsedInput.nodeId], figmaService);
                         if (imageNodes.length > 0) {
-                            const exportedAssets = await exportComponentAssets(
+                            const exportedAssets = await exportImageAssets(
                                 imageNodes,
                                 parsedInput.fileId,
                                 figmaService,
@@ -569,118 +569,14 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
     );
 }
 
-/**
- * OPTIMIZED: Filter image nodes within a component - only searches within target nodes
- */
-async function filterImageNodesInComponent(fileId: string, targetNodeIds: string[], figmaService: FigmaService): Promise<Array<{id: string, name: string, node: any}>> {
-    // OPTIMIZED: Only get the target nodes instead of the entire file (massive performance improvement)
-    const targetNodes = await figmaService.getNodes(fileId, targetNodeIds);
-
-    const allNodesWithImages: Array<{id: string, name: string, node: any}> = [];
-
-    function extractImageNodes(node: any, nodeId: string = node.id): void {
-        // Check if this node has image fills
-        if (node.fills && node.fills.some((fill: any) => fill.type === 'IMAGE' && fill.visible !== false)) {
-            allNodesWithImages.push({
-                id: nodeId,
-                name: node.name,
-                node: node
-            });
-        }
-
-        // Check if this is a vector/illustration that should be exported
-        if (node.type === 'VECTOR' && node.name) {
-            const name = node.name.toLowerCase();
-            if ((name.includes('image') || name.includes('illustration') || name.includes('graphic')) &&
-                !name.includes('icon') && !name.includes('button')) {
-                allNodesWithImages.push({
-                    id: nodeId,
-                    name: node.name,
-                    node: node
-                });
-            }
-        }
-
-        // Recursively check children
-        if (node.children) {
-            node.children.forEach((child: any) => {
-                extractImageNodes(child, child.id);
-            });
-        }
-    }
-
-    // OPTIMIZED: Extract only from target nodes instead of entire file
-    // This eliminates the need for expensive boundary checking since we only search within target nodes
-    Object.values(targetNodes).forEach((node: any) => {
-        extractImageNodes(node);
-    });
-
-    // OPTIMIZED: No filtering needed since we only searched within target nodes
-    return allNodesWithImages;
-}
+import { filterImageNodes } from "../assets/node-filter.js";
 
 // REMOVED: isNodeWithinTarget function no longer needed since we only search within target nodes
 
 /**
  * Export component assets to Flutter project
  */
-async function exportComponentAssets(
-    imageNodes: Array<{id: string, name: string, node: any}>,
-    fileId: string,
-    figmaService: FigmaService,
-    projectPath: string
-): Promise<AssetInfo[]> {
-    if (imageNodes.length === 0) {
-        return [];
-    }
-
-    // Create assets directory structure
-    const assetsDir = await createAssetsDirectory(projectPath);
-    const downloadedAssets: AssetInfo[] = [];
-
-    // Export images at 2x scale (standard for Flutter)
-    const imageUrls = await figmaService.getImageExportUrls(fileId, imageNodes.map(n => n.id), {
-        format: 'png',
-        scale: 2
-    });
-
-    for (const imageNode of imageNodes) {
-        const imageUrl = imageUrls[imageNode.id];
-        if (!imageUrl) continue;
-
-        const filename = generateAssetFilename(imageNode.name, 'png', 2, false);
-        const filepath = join(assetsDir, filename);
-
-        try {
-            // Download the image
-            await downloadImage(imageUrl, filepath);
-
-            // Get file size for reporting
-            const stats = await getFileStats(filepath);
-
-            downloadedAssets.push({
-                nodeId: imageNode.id,
-                nodeName: imageNode.name,
-                filename,
-                path: `assets/images/${filename}`,
-                size: stats.size
-            });
-        } catch (downloadError) {
-            console.warn(`Failed to download image ${imageNode.name}:`, downloadError);
-        }
-    }
-
-    if (downloadedAssets.length > 0) {
-        // Update pubspec.yaml
-        const pubspecPath = join(projectPath, 'pubspec.yaml');
-        await updatePubspecAssets(pubspecPath, downloadedAssets);
-
-        // Generate asset constants file
-        await generateAssetConstants(downloadedAssets, projectPath);
-    }
-
-    return downloadedAssets;
-}
+import { exportImageAssets } from '../assets/asset-manager.js';
 
 /**
  * Generate asset export report

@@ -252,11 +252,54 @@ export function groupAssetsByBaseName(assets: Array<{filename: string, nodeName:
     }, {} as Record<string, Array<{filename: string, size: string}>>);
 }
 
-function toCamelCase(str: string): string {
-    return str
-        .toLowerCase()
-        .replace(/[^a-z0-9]/g, '_')
-        .replace(/_+/g, '_')
-        .replace(/^_|_$/g, '')
-        .replace(/_(.)/g, (_, char) => char.toUpperCase());
+import { toCamelCase } from '../../../utils/helpers.js';
+
+export async function exportImageAssets(
+    imageNodes: Array<{id: string, name: string, node: any}>,
+    fileId: string,
+    figmaService: any,
+    projectPath: string
+): Promise<AssetInfo[]> {
+    if (imageNodes.length === 0) {
+        return [];
+    }
+
+    const assetsDir = await createAssetsDirectory(projectPath);
+    const downloadedAssets: AssetInfo[] = [];
+
+    const imageUrls = await figmaService.getImageExportUrls(fileId, imageNodes.map(n => n.id), {
+        format: 'png',
+        scale: 2
+    });
+
+    for (const imageNode of imageNodes) {
+        const imageUrl = imageUrls[imageNode.id];
+        if (!imageUrl) continue;
+
+        const filename = generateAssetFilename(imageNode.name, 'png', 2, false);
+        const filepath = join(assetsDir, filename);
+
+        try {
+            await downloadImage(imageUrl, filepath);
+            const stats = await getFileStats(filepath);
+
+            downloadedAssets.push({
+                nodeId: imageNode.id,
+                nodeName: imageNode.name,
+                filename,
+                path: `assets/images/${filename}`,
+                size: stats.size
+            });
+        } catch (downloadError) {
+            console.warn(`Failed to download image ${imageNode.name}:`, downloadError);
+        }
+    }
+
+    if (downloadedAssets.length > 0) {
+        const pubspecPath = join(projectPath, 'pubspec.yaml');
+        await updatePubspecAssets(pubspecPath, downloadedAssets);
+        await generateAssetConstants(downloadedAssets, projectPath);
+    }
+
+    return downloadedAssets;
 }
