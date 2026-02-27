@@ -16,6 +16,7 @@ import {
 
 export function registerFlutterAssetTools(server: McpServer, figmaApiKey: string) {
     // Tool: Export Flutter Assets
+    // @ts-ignore TS2589: Known TypeScript limitation with complex Zod schemas in registerTool generics
     server.registerTool(
         "export_flutter_assets",
         {
@@ -25,9 +26,9 @@ export function registerFlutterAssetTools(server: McpServer, figmaApiKey: string
                 fileId: z.string().describe("Figma file ID"),
                 nodeIds: z.array(z.string()).describe("Array of node IDs to export as images"),
                 projectPath: z.string().optional().describe("Path to Flutter project (defaults to current directory)"),
-                format: z.enum(['png', 'jpg', 'svg']).default('png').describe("Export format"),
-                scale: z.number().optional().default(2).describe("Export scale (1x, 2x, 3x, 4x)"),
-                includeMultipleResolutions: z.boolean().optional().default(false).describe("Generate @2x, @3x variants for different screen densities")
+                format: z.enum(['png', 'jpg', 'svg']).optional().describe("Export format (default: png)"),
+                scale: z.number().optional().describe("Export scale (1x, 2x, 3x, 4x) (default: 2)"),
+                includeMultipleResolutions: z.boolean().optional().describe("Generate @2x, @3x variants for different screen densities (default: false)")
             }
         },
         async ({fileId, nodeIds, projectPath = process.cwd(), format = 'png', scale = 2, includeMultipleResolutions = false}) => {
