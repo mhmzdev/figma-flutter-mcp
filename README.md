@@ -255,3 +255,8 @@ Copyright (c) 2025 MUHAMMAD HAMZA
 ---
 
 **Built with ❤️ for designers and developers who want to bridge the gap between design and code.**
+
+## Hosted deployment
+
+A hosted deployment is available on [Fronteir AI](https://fronteir.ai/mcp/mhmzdev-figma-flutter-mcp).
+
