@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/mhmzdev-figma-flutter-mcp-badge.png)](https://mseep.ai/app/mhmzdev-figma-flutter-mcp)
+
 <div align="center">
   <img src="docs/images/figma-flutter-mcp.png" alt="Theme Setup Example" style="max-width: 100%; height: auto;">
   <br>
