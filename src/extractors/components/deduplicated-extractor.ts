@@ -21,6 +21,7 @@ import type {
 
 export interface DeduplicatedComponentAnalysis {
   metadata: ComponentMetadata;
+  layout: LayoutInfo;
   styleRefs: Record<string, string>;
   children: DeduplicatedComponentChild[];
   nestedComponents: NestedComponentInfo[];
@@ -32,6 +33,7 @@ export interface DeduplicatedComponentChild {
   name: string;
   type: string;
   styleRefs: string[];
+  layout: LayoutInfo;
   semanticType?: string;
   textContent?: string;
 }
@@ -76,6 +78,7 @@ export class DeduplicatedComponentExtractor {
     
     const result: DeduplicatedComponentAnalysis = {
       metadata,
+      layout,
       styleRefs,
       children,
       nestedComponents
@@ -94,9 +97,10 @@ export class DeduplicatedComponentExtractor {
     const children: DeduplicatedComponentChild[] = [];
     
     for (const child of node.children) {
-      if (!child.visible) continue;
+      if (child.visible === false) continue;
       
       const childStyleRefs: string[] = [];
+      const childLayout = extractLayoutInfo(child);
       
       // Extract child styling using enhanced global style manager
       const childStyling = extractStylingInfo(child);
@@ -133,6 +137,7 @@ export class DeduplicatedComponentExtractor {
         name: child.name,
         type: child.type,
         styleRefs: childStyleRefs,
+        layout: childLayout,
         semanticType: this.detectSemanticType(child),
         textContent
       });
