@@ -17,6 +17,7 @@ import type {
     ComponentExtractionOptions
 } from './types.js';
 import { detectSemanticTypeAdvanced, generateSemanticContext } from '../../tools/flutter/semantic-detection.js';
+import {Logger} from '../../utils/logger.js';
 
 /**
  * Extract component metadata
@@ -702,11 +703,11 @@ function detectSemanticType(
             
             // Log reasoning for debugging (in development)
             if (process.env.NODE_ENV === 'development') {
-                console.debug(`Low confidence (${classification.confidence}) for "${content}": ${classification.reasoning.join(', ')}`);
+                Logger.info(`Low confidence (${classification.confidence}) for "${content}": ${classification.reasoning.join(', ')}`);
             }
         } catch (error) {
             // Fall back to legacy detection if advanced detection fails
-            console.warn('Advanced semantic detection failed, using legacy method:', error);
+            Logger.warn('Advanced semantic detection failed, using legacy method:', error);
         }
     }
 

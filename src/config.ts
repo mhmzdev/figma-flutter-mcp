@@ -103,7 +103,7 @@ export function getServerConfig(): ServerConfig {
     }
 
     // Load .env file with override if custom path provided
-    loadEnv({path: envFilePath, override: !!argv.env});
+    loadEnv({path: envFilePath, override: !!argv.env, quiet: true});
 
     const config: ServerConfig = {
         figmaApiKey: undefined,

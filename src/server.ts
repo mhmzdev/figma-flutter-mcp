@@ -206,7 +206,7 @@ export async function startHttpServer(port: number, figmaApiKey?: string): Promi
       return;
     }
 
-    console.log(`Received session termination request for session ${sessionId}`);
+    Logger.log(`Received session termination request for session ${sessionId}`);
 
     try {
       const transport = transports.streamable[sessionId];

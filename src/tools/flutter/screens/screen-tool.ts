@@ -25,6 +25,7 @@ import {
     type AssetInfo
 } from "../assets/asset-manager.js";
 import {join} from 'path';
+import {Logger} from "../../../utils/logger.js";
 
 export function registerScreenTools(server: McpServer, figmaApiKey: string) {
 
@@ -317,7 +318,7 @@ async function exportScreenAssets(
                 size: stats.size
             });
         } catch (downloadError) {
-            console.warn(`Failed to download image ${imageNode.name}:`, downloadError);
+            Logger.warn(`Failed to download image ${imageNode.name}:`, downloadError);
         }
     }
 

@@ -667,7 +667,7 @@ async function exportComponentAssets(
                 size: stats.size
             });
         } catch (downloadError) {
-            console.warn(`Failed to download image ${imageNode.name}:`, downloadError);
+            Logger.warn(`Failed to download image ${imageNode.name}:`, downloadError);
         }
     }
 

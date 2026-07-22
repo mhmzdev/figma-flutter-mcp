@@ -17,11 +17,11 @@ export function registerAllTools(server: McpServer, figmaApiKey: string) {
     registerTypographyTools(server, figmaApiKey);
     console.error('🛠️ Tools Debug - Typography tools registered');
 
-    console.log("📋 Registered tool categories:");
-    console.log("  🚀 Flutter tools - Widgets, Screens");
-    console.log("  🏞️ Export assets - Images, SVGs");
-    console.log("  🎨 Theme tools - Colors, Typography");
-    console.log("  📝 Typography tools - Fonts, Sizes");
+    console.error("📋 Registered tool categories:");
+    console.error("  🚀 Flutter tools - Widgets, Screens");
+    console.error("  🏞️ Export assets - Images, SVGs");
+    console.error("  🎨 Theme tools - Colors, Typography");
+    console.error("  📝 Typography tools - Fonts, Sizes");
 
     console.error('🛠️ Tools Debug - All tools registration complete');
 }
