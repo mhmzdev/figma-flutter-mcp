@@ -43,6 +43,10 @@ export function generateScreenAnalysisReport(
         const area = analysis.layout.contentArea;
         output += `- Content Area: ${Math.round(area.width)}×${Math.round(area.height)}px at (${Math.round(area.x)}, ${Math.round(area.y)})\n`;
     }
+    const topSafeArea = analysis.layout.safeArea?.top;
+    if (topSafeArea?.required) {
+        output += `- Top Safe Area: Required at runtime (no App Bar present)\n`;
+    }
     output += `\n`;
 
     // Screen sections
@@ -285,7 +289,8 @@ export function generateFlutterScreenGuidance(analysis: ScreenAnalysis): string 
     guidance += `- Status bars, battery icons, wifi indicators are automatically filtered out\n`;
     guidance += `- Home indicators, notches, and device bezels are ignored during analysis\n`;
     guidance += `- Only actual app design content is analyzed for Flutter implementation\n`;
-    guidance += `- Use SafeArea widget in Flutter to handle device-specific insets\n\n`;
+    guidance += `- Safe-area insets belong to screen composition, not reusable component heights\n`;
+    guidance += `- Use Flutter SafeArea for reported screen edges; never hardcode the design inset\n\n`;
 
     // Main scaffold structure
     guidance += `Main Screen Structure:\n`;
@@ -307,32 +312,59 @@ export function generateFlutterScreenGuidance(analysis: ScreenAnalysis): string 
     }
     
     // Body structure
+    const footerSections = analysis.sections.filter(section => section.type === 'footer');
+    const bodySections = analysis.sections.filter(section => section.type !== 'footer');
+
+    // Body owns whichever edge its neighboring slot does not already absorb:
+    // top is unhandled without an AppBar, bottom is unhandled without a footer/bottomNavigationBar.
+    const needsTopSafeArea = analysis.layout.safeArea?.top?.required ?? false;
+    const needsBottomSafeArea = footerSections.length === 0;
+    const wrapBodyInSafeArea = needsTopSafeArea || needsBottomSafeArea;
+    const bodyIndent = wrapBodyInSafeArea ? '  ' : '';
+
     guidance += `  body: `;
-    
+    if (wrapBodyInSafeArea) {
+        guidance += `SafeArea(\n`;
+        if (!needsTopSafeArea) {
+            guidance += `    top: false, // the App Bar already occupies the top edge\n`;
+        }
+        if (!needsBottomSafeArea) {
+            guidance += `    bottom: false, // bottomNavigationBar already occupies the bottom edge\n`;
+        }
+        guidance += `    child: `;
+    }
+
     if (analysis.layout.scrollable) {
         guidance += `SingleChildScrollView(\n`;
-        guidance += `    child: Column(\n`;
-        guidance += `      children: [\n`;
+        guidance += `${bodyIndent}    child: Column(\n`;
+        guidance += `${bodyIndent}      children: [\n`;
     } else {
         guidance += `Column(\n`;
-        guidance += `    children: [\n`;
+        guidance += `${bodyIndent}    children: [\n`;
     }
-    
-    // Add sections
-    analysis.sections.forEach((section, index) => {
+
+    // Add non-footer sections to the body
+    bodySections.forEach(section => {
         const widgetName = toPascalCase(section.name);
-        guidance += `        ${widgetName}(), // ${section.type} section\n`;
+        guidance += `${bodyIndent}        ${widgetName}(), // ${section.type} section\n`;
     });
     
-    guidance += `      ],\n`;
-    guidance += `    ),\n`;
+    guidance += `${bodyIndent}      ],\n`;
+    guidance += `${bodyIndent}    ),\n`;
     
     if (analysis.layout.scrollable) {
+        guidance += `${bodyIndent}  ),\n`;
+    }
+
+    if (wrapBodyInSafeArea) {
         guidance += `  ),\n`;
     }
     
-    // Bottom navigation
-    if (analysis.navigation.hasTabBar) {
+    // Bottom screen section
+    if (footerSections.length > 0) {
+        const footerWidgetName = toPascalCase(footerSections[0].name);
+        guidance += `  bottomNavigationBar: ${footerWidgetName}(),\n`;
+    } else if (analysis.navigation.hasTabBar) {
         guidance += `  bottomNavigationBar: BottomNavigationBar(\n`;
         guidance += `    items: [\n`;
         

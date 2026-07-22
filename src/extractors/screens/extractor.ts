@@ -10,7 +10,8 @@ import type {
     NavigationElement,
     ScreenAssetInfo,
     SkippedNodeInfo,
-    ScreenExtractionOptions
+    ScreenExtractionOptions,
+    ScreenSafeAreaInfo
 } from './types.js';
 import type {ComponentChild, NestedComponentInfo} from '../components/types.js';
 import {
@@ -57,6 +58,7 @@ export function extractScreenLayoutInfo(node: FigmaNode): ScreenLayoutInfo {
         hasHeader: detectHeader(node),
         hasFooter: detectFooter(node),
         hasNavigation: detectNavigation(node),
+        safeArea: detectScreenSafeArea(node),
         contentArea: calculateContentArea(node)
     };
 }
@@ -375,6 +377,17 @@ function detectFooter(node: FigmaNode): boolean {
         return (name.includes('footer') || name.includes('bottom') || name.includes('tab bar')) ||
                (bounds && bounds.y > screenHeight * 0.8); // Bottom area
     });
+}
+
+
+/**
+ * Detect whether the screen needs to own the runtime top safe-area inset
+ * (i.e. no App Bar is present to absorb it).
+ */
+function detectScreenSafeArea(node: FigmaNode): ScreenSafeAreaInfo | undefined {
+    if (detectAppBar(node)) return undefined;
+
+    return {top: {required: true, reason: 'no-app-bar'}};
 }
 
 /**
