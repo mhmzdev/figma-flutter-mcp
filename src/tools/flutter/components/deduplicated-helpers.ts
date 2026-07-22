@@ -122,6 +122,16 @@ export function generateComprehensiveDeduplicatedReport(
   output += `   • Name: ${analysis.metadata.name}\n`;
   output += `   • Type: ${analysis.metadata.type}\n`;
   output += `   • Node ID: ${analysis.metadata.nodeId}\n`;
+  output += `   • Size: ${Math.round(analysis.layout.dimensions.width)}×${Math.round(analysis.layout.dimensions.height)}px\n`;
+  if (analysis.layout.sizingHorizontal) {
+    output += `   • Horizontal sizing: ${analysis.layout.sizingHorizontal}\n`;
+  }
+  if (analysis.layout.sizingVertical) {
+    output += `   • Vertical sizing: ${analysis.layout.sizingVertical}\n`;
+  }
+  if (analysis.layout.layoutAlign) {
+    output += `   • Parent alignment: ${analysis.layout.layoutAlign}\n`;
+  }
   if (analysis.metadata.componentKey) {
     output += `   • Component Key: ${analysis.metadata.componentKey}\n`;
   }
@@ -154,6 +164,17 @@ export function generateComprehensiveDeduplicatedReport(
       
       if (child.textContent) {
         output += `      📝 Text: "${child.textContent}"\n`;
+      }
+
+      output += `      📐 Size: ${Math.round(child.layout.dimensions.width)}×${Math.round(child.layout.dimensions.height)}px\n`;
+      if (child.layout.sizingHorizontal) {
+        output += `      📐 Horizontal sizing: ${child.layout.sizingHorizontal}\n`;
+      }
+      if (child.layout.sizingVertical) {
+        output += `      📐 Vertical sizing: ${child.layout.sizingVertical}\n`;
+      }
+      if (child.layout.layoutAlign) {
+        output += `      📐 Parent alignment: ${child.layout.layoutAlign}\n`;
       }
       
       if (child.styleRefs.length > 0) {
@@ -248,15 +269,7 @@ export function addVisualContextToDeduplicatedReport(
   // Convert deduplicated analysis to component analysis format for visual context
   const componentAnalysis: ComponentAnalysis = {
     metadata: analysis.metadata,
-    layout: {
-      type: 'auto-layout', // Default assumption
-      dimensions: { width: 400, height: 200 }, // Default dimensions
-      direction: 'vertical',
-      spacing: undefined,
-      padding: undefined,
-      alignItems: undefined,
-      justifyContent: undefined
-    },
+    layout: analysis.layout,
     styling: {
       fills: [],
       strokes: [],
@@ -271,11 +284,7 @@ export function addVisualContextToDeduplicatedReport(
       isNestedComponent: false,
       visualImportance: 5,
       basicInfo: {
-        layout: { 
-          type: 'auto-layout',
-          dimensions: { width: 100, height: 50 },
-          direction: 'vertical'
-        },
+        layout: child.layout,
         styling: { 
           fills: [], 
           strokes: [], 

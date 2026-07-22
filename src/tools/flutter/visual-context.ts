@@ -232,11 +232,15 @@ function generateComponentSpatialDescription(analysis: ComponentAnalysis): strin
         if (analysis.layout.spacing) {
             description += `   • Element spacing: ${analysis.layout.spacing}px consistent\n`;
         }
-        if (analysis.layout.alignItems) {
-            description += `   • Cross-axis alignment: ${analysis.layout.alignItems}\n`;
+        const crossAxisAlignment =
+            analysis.layout.crossAxisAlignment ?? analysis.layout.justifyContent;
+        if (crossAxisAlignment) {
+            description += `   • Cross-axis alignment: ${crossAxisAlignment}\n`;
         }
-        if (analysis.layout.justifyContent) {
-            description += `   • Main-axis alignment: ${analysis.layout.justifyContent}\n`;
+        const mainAxisAlignment =
+            analysis.layout.mainAxisAlignment ?? analysis.layout.alignItems;
+        if (mainAxisAlignment) {
+            description += `   • Main-axis alignment: ${mainAxisAlignment}\n`;
         }
     } else {
         description += `   • Layout flow: absolute positioning\n`;

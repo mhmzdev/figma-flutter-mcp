@@ -1,7 +1,50 @@
 // src/tools/flutter/screens/helpers.mts
 
 import type {ScreenAnalysis, ScreenSection, NavigationElement, ScreenAssetInfo} from "../../../extractors/screens/types.js";
+import type {ComponentChild} from "../../../extractors/components/types.js";
 import {generateScreenVisualContext} from "../visual-context.js";
+
+export function generateChildLayoutEvidence(
+    children: ComponentChild[],
+    indent: string = '   ',
+    depth: number = 0,
+    maxDepth: number = 2
+): string {
+    let output = '';
+
+    children.forEach(child => {
+        const layout = child.basicInfo?.layout;
+        if (layout) {
+            const details = [
+                layout.dimensions
+                    ? `${Math.round(layout.dimensions.width)}×${Math.round(layout.dimensions.height)}px`
+                    : undefined,
+                layout.sizingHorizontal
+                    ? `horizontal=${layout.sizingHorizontal}`
+                    : undefined,
+                layout.sizingVertical
+                    ? `vertical=${layout.sizingVertical}`
+                    : undefined,
+                layout.layoutAlign
+                    ? `parentAlign=${layout.layoutAlign}`
+                    : undefined
+            ].filter(Boolean);
+            output += `${indent}- ${child.name}: ${details.join(', ')}\n`;
+        }
+
+        if (child.children?.length && depth < maxDepth) {
+            output += generateChildLayoutEvidence(
+                child.children,
+                `${indent}  `,
+                depth + 1,
+                maxDepth
+            );
+        }
+    });
+
+    return output;
+}
+
 
 /**
  * Generate comprehensive screen analysis report
@@ -56,9 +99,19 @@ export function generateScreenAnalysisReport(
                 const dims = section.layout.dimensions;
                 output += `   Size: ${Math.round(dims.width)}×${Math.round(dims.height)}px\n`;
             }
+            if (section.layout.sizingHorizontal) {
+                output += `   Horizontal Sizing: ${section.layout.sizingHorizontal}\n`;
+            }
+            if (section.layout.sizingVertical) {
+                output += `   Vertical Sizing: ${section.layout.sizingVertical}\n`;
+            }
+            if (section.layout.layoutAlign) {
+                output += `   Parent Alignment: ${section.layout.layoutAlign}\n`;
+            }
             
             if (section.children.length > 0) {
                 output += `   Contains: ${section.children.length} elements\n`;
+                output += generateChildLayoutEvidence(section.children);
             }
             
             if (section.components.length > 0) {
@@ -67,6 +120,11 @@ export function generateScreenAnalysisReport(
         });
         output += `\n`;
     }
+
+    output += `Layout Sizing Semantics:\n`;
+    output += `- FILL / STRETCH: adapt to the parent's available space; do not hardcode the measured width. Use parent padding, stretch, or Expanded as appropriate.\n`;
+    output += `- FIXED: preserve the explicit Figma dimension.\n`;
+    output += `- HUG: size to the child content.\n\n`;
 
     // Navigation information
     if (analysis.navigation.navigationElements.length > 0) {

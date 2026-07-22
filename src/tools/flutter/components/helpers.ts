@@ -91,11 +91,20 @@ export function generateComponentAnalysisReport(
             output += `- Padding: ${p.top}px ${p.right}px ${p.bottom}px ${p.left}px\n`;
         }
     }
-    if (analysis.layout.alignItems) {
-        output += `- Align Items: ${analysis.layout.alignItems}\n`;
+    if (analysis.layout.sizingHorizontal) {
+        output += `- Horizontal Sizing: ${analysis.layout.sizingHorizontal}\n`;
     }
-    if (analysis.layout.justifyContent) {
-        output += `- Justify Content: ${analysis.layout.justifyContent}\n`;
+    if (analysis.layout.sizingVertical) {
+        output += `- Vertical Sizing: ${analysis.layout.sizingVertical}\n`;
+    }
+    if (analysis.layout.layoutAlign) {
+        output += `- Parent Alignment: ${analysis.layout.layoutAlign}\n`;
+    }
+    if (analysis.layout.mainAxisAlignment) {
+        output += `- Main Axis Alignment: ${analysis.layout.mainAxisAlignment}\n`;
+    }
+    if (analysis.layout.crossAxisAlignment) {
+        output += `- Cross Axis Alignment: ${analysis.layout.crossAxisAlignment}\n`;
     }
     output += `\n`;
 
@@ -157,6 +166,15 @@ export function generateComponentAnalysisReport(
             if (child.basicInfo?.layout?.dimensions) {
                 const dims = child.basicInfo.layout.dimensions;
                 output += `   Size: ${Math.round(dims.width)}×${Math.round(dims.height)}px\n`;
+            }
+            if (child.basicInfo?.layout?.sizingHorizontal) {
+                output += `   Horizontal Sizing: ${child.basicInfo.layout.sizingHorizontal}\n`;
+            }
+            if (child.basicInfo?.layout?.sizingVertical) {
+                output += `   Vertical Sizing: ${child.basicInfo.layout.sizingVertical}\n`;
+            }
+            if (child.basicInfo?.layout?.layoutAlign) {
+                output += `   Parent Alignment: ${child.basicInfo.layout.layoutAlign}\n`;
             }
 
             if (child.basicInfo?.styling?.fills && child.basicInfo.styling.fills.length > 0) {
@@ -250,11 +268,15 @@ export function generateFlutterGuidance(analysis: ComponentAnalysis): string {
             guidance += `- Add spacing with SizedBox(${spacingWidget}: ${analysis.layout.spacing})\n`;
         }
 
-        if (analysis.layout.alignItems) {
-            guidance += `- CrossAxisAlignment: ${mapFigmaToFlutterAlignment(analysis.layout.alignItems)}\n`;
+        const crossAxisAlignment =
+            analysis.layout.crossAxisAlignment ?? analysis.layout.justifyContent;
+        if (crossAxisAlignment) {
+            guidance += `- CrossAxisAlignment: ${mapFigmaToFlutterAlignment(crossAxisAlignment)}\n`;
         }
-        if (analysis.layout.justifyContent) {
-            guidance += `- MainAxisAlignment: ${mapFigmaToFlutterAlignment(analysis.layout.justifyContent)}\n`;
+        const mainAxisAlignment =
+            analysis.layout.mainAxisAlignment ?? analysis.layout.alignItems;
+        if (mainAxisAlignment) {
+            guidance += `- MainAxisAlignment: ${mapFigmaToFlutterAlignment(mainAxisAlignment)}\n`;
         }
     } else {
         guidance += `- Use Container() or Stack() for layout\n`;
@@ -378,6 +400,15 @@ export function generateStructureInspectionReport(node: any, showAllChildren: bo
         const bbox = node.absoluteBoundingBox;
         output += `Dimensions: ${Math.round(bbox.width)}×${Math.round(bbox.height)}px\n`;
     }
+    if (node.layoutSizingHorizontal) {
+        output += `Horizontal Sizing: ${node.layoutSizingHorizontal}\n`;
+    }
+    if (node.layoutSizingVertical) {
+        output += `Vertical Sizing: ${node.layoutSizingVertical}\n`;
+    }
+    if (node.layoutAlign) {
+        output += `Parent Alignment: ${node.layoutAlign}\n`;
+    }
 
     output += `\n`;
 
@@ -401,6 +432,15 @@ export function generateStructureInspectionReport(node: any, showAllChildren: bo
         if (child.absoluteBoundingBox) {
             const bbox = child.absoluteBoundingBox;
             output += `   Size: ${Math.round(bbox.width)}×${Math.round(bbox.height)}px\n`;
+        }
+        if (child.layoutSizingHorizontal) {
+            output += `   Horizontal Sizing: ${child.layoutSizingHorizontal}\n`;
+        }
+        if (child.layoutSizingVertical) {
+            output += `   Vertical Sizing: ${child.layoutSizingVertical}\n`;
+        }
+        if (child.layoutAlign) {
+            output += `   Parent Alignment: ${child.layoutAlign}\n`;
         }
 
         if (child.children && child.children.length > 0) {

@@ -43,6 +43,12 @@ export interface LayoutInfo {
     };
     alignItems?: string;
     justifyContent?: string;
+    mainAxisAlignment?: string;
+    crossAxisAlignment?: string;
+    sizingHorizontal?: 'FIXED' | 'HUG' | 'FILL';
+    sizingVertical?: 'FIXED' | 'HUG' | 'FILL';
+    layoutAlign?: 'INHERIT' | 'STRETCH';
+    layoutGrow?: number;
 }
 
 /**
@@ -158,6 +164,7 @@ export interface ComponentChild {
         styling?: Partial<StylingInfo>;
         text?: TextInfo;
     };
+    children?: ComponentChild[];
 }
 
 /**
