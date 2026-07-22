@@ -12,6 +12,7 @@ import {
     type AssetInfo,
     generateSvgAssetConstants
 } from "./asset-manager.js";
+import {Logger} from "../../../utils/logger.js";
 
 export function registerSvgAssetTools(server: McpServer, figmaApiKey: string) {
     // Tool: Export SVG Flutter Assets
@@ -176,10 +177,10 @@ async function filterSvgNodes(fileId: string, targetNodeIds: string[], figmaServ
     }
 
     // Log analysis results for debugging (this will help users understand why nodes were/weren't selected)
-    console.log('SVG Node Analysis Results:');
+    Logger.info('SVG Node Analysis Results:');
     analysisResults.forEach(result => {
         const status = result.isSvg ? '✓ SVG' : '✗ Not SVG';
-        console.log(` 🎨 ${status} | ${result.name} (${result.type}) | Vector: ${(result.vectorPercentage * 100).toFixed(1)}%`);
+        Logger.info(` 🎨 ${status} | ${result.name} (${result.type}) | Vector: ${(result.vectorPercentage * 100).toFixed(1)}%`);
     });
 
     return svgNodes;

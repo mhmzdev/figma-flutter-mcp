@@ -10,6 +10,7 @@ import {
     createFigmaError
 } from '../types/errors.js';
 import {withRetry} from '../utils/retry.js';
+import {Logger} from '../utils/logger.js';
 
 export class FigmaService {
     private accessToken: string;
@@ -30,7 +31,7 @@ export class FigmaService {
             const url = `${this.baseUrl}${endpoint}`;
 
             try {
-                console.log(`🔄 Making Figma API request: ${endpoint}`);
+                Logger.info(`🔄 Making Figma API request: ${endpoint}`);
 
                 const response = await fetch(url, {
                     headers: {
@@ -61,7 +62,7 @@ export class FigmaService {
                 }
 
                 const data = await response.json() as T;
-                console.log(`✅ Successfully fetched: ${endpoint}`);
+                Logger.info(`✅ Successfully fetched: ${endpoint}`);
                 return data;
 
             } catch (error) {

@@ -1,6 +1,7 @@
 // utils/retry.mts
 
 import {FigmaError, FigmaRateLimitError, FigmaNetworkError} from '../types/errors.js';
+import {Logger} from './logger.js';
 
 export interface RetryOptions {
     maxAttempts?: number;
@@ -63,7 +64,7 @@ export async function withRetry<T>(
             // Cap the delay
             delay = Math.min(delay, opts.maxDelayMs);
 
-            console.log(`Attempt ${attempt} failed: ${lastError.message}. Retrying in ${delay}ms...`);
+            Logger.warn(`Attempt ${attempt} failed: ${lastError.message}. Retrying in ${delay}ms...`);
 
             await sleep(delay);
         }
@@ -78,5 +79,5 @@ function sleep(ms: number): Promise<void> {
 
 // Helper function for logging retry state
 export function logRetryAttempt(state: RetryState, error: Error): void {
-    console.warn(`Retry attempt ${state.attempt} failed after ${state.totalElapsed}ms: ${error.message}`);
+    Logger.warn(`Retry attempt ${state.attempt} failed after ${state.totalElapsed}ms: ${error.message}`);
 }
