@@ -18,31 +18,44 @@ export interface ComponentInput {
  * Supports:
  * - https://www.figma.com/file/{fileId}/...?node-id={nodeId}
  * - https://www.figma.com/design/{fileId}/...?node-id={nodeId}
+ * - Figma URL + separate nodeId (explicit nodeId wins over URL node-id)
  * - Direct fileId and nodeId parameters
  */
 export function parseComponentInput(input: string, nodeId?: string): ComponentInput {
     try {
-        // If nodeId is provided separately, treat as direct input
-        if (nodeId) {
-            const validatedFileId = validateFileId(input.trim());
-            const validatedNodeId = validateAndConvertNodeId(nodeId.trim());
+        const trimmedInput = input.trim();
+        const explicitNodeId = nodeId?.trim();
+
+        // URL input: always extract fileId from the URL first.
+        // When a separate nodeId is also provided, it overrides the URL node-id.
+        if (trimmedInput.includes('figma.com')) {
+            const {fileId, nodeIdFromUrl} = extractIdsFromUrl(trimmedInput);
+            const resolvedNodeId = explicitNodeId || nodeIdFromUrl;
+            if (!resolvedNodeId) {
+                throw new FigmaError('Node ID not found in URL parameters', 'INVALID_URL');
+            }
 
             return {
-                fileId: validatedFileId,
-                nodeId: validatedNodeId,
+                fileId,
+                nodeId: validateAndConvertNodeId(resolvedNodeId),
+                source: 'url',
+                isValid: true
+            };
+        }
+
+        // Plain fileId + separate nodeId
+        if (explicitNodeId) {
+            return {
+                fileId: validateFileId(trimmedInput),
+                nodeId: validateAndConvertNodeId(explicitNodeId),
                 source: 'direct',
                 isValid: true
             };
         }
 
-        // Try to parse as URL first
-        if (input.includes('figma.com')) {
-            return parseFromUrl(input);
-        }
-
-        // Check if it's in fileId:nodeId format
-        if (input.includes(':') && input.split(':').length === 2) {
-            const [fileIdPart, nodeIdPart] = input.split(':');
+        // fileId:nodeId shorthand
+        if (trimmedInput.includes(':') && trimmedInput.split(':').length === 2) {
+            const [fileIdPart, nodeIdPart] = trimmedInput.split(':');
             const validatedFileId = validateFileId(fileIdPart.trim());
             const validatedNodeId = validateAndConvertNodeId(`${fileIdPart.trim()}:${nodeIdPart.trim()}`);
 
@@ -68,43 +81,29 @@ export function parseComponentInput(input: string, nodeId?: string): ComponentIn
 }
 
 /**
- * Parse component info from Figma URL
+ * Extract file ID and optional node ID from a Figma URL.
  */
-function parseFromUrl(url: string): ComponentInput {
+function extractIdsFromUrl(url: string): {fileId: string; nodeIdFromUrl?: string} {
     try {
         const urlObj = new URL(url.trim());
 
-        // Check if it's a valid Figma URL
         if (!urlObj.hostname.includes('figma.com')) {
             throw new FigmaError('Not a valid Figma URL', 'INVALID_URL');
         }
 
-        // Extract file ID from path
         // Paths can be: /file/{fileId}/... or /design/{fileId}/...
         const pathMatch = urlObj.pathname.match(/\/(file|design)\/([a-zA-Z0-9\-_]+)/);
         if (!pathMatch || !pathMatch[2]) {
             throw new FigmaError('Could not extract file ID from URL', 'INVALID_URL');
         }
 
-        const fileId = pathMatch[2];
-        const validatedFileId = validateFileId(fileId);
-
-        // Extract node ID from query parameters
-        const nodeIdParam = urlObj.searchParams.get('node-id') || urlObj.searchParams.get('node_id');
-        if (!nodeIdParam) {
-            throw new FigmaError('Node ID not found in URL parameters', 'INVALID_URL');
-        }
-
-        // Node ID in URL is often in format "123-456" but API expects "123:456"
-        const validatedNodeId = validateAndConvertNodeId(nodeIdParam);
+        const fileId = validateFileId(pathMatch[2]);
+        const nodeIdParam = urlObj.searchParams.get('node-id') || urlObj.searchParams.get('node_id') || undefined;
 
         return {
-            fileId: validatedFileId,
-            nodeId: validatedNodeId,
-            source: 'url',
-            isValid: true
+            fileId,
+            nodeIdFromUrl: nodeIdParam || undefined
         };
-
     } catch (error) {
         throw new FigmaError(
             `Failed to parse Figma URL: ${error instanceof Error ? error.message : String(error)}`,
