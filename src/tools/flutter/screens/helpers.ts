@@ -8,6 +8,10 @@ import {
     formatCategorizedEffects,
     formatFigmaEffects
 } from "../../../utils/effects-format.js";
+import {
+    formatVisualBoxEvidence,
+    formatFigmaNodeBoxEvidence
+} from "../../../utils/style-format.js";
 
 export function generateChildLayoutEvidence(
     children: ComponentChild[],
@@ -35,7 +39,15 @@ export function generateChildLayoutEvidence(
                     : undefined
             ].filter(Boolean);
             output += `${indent}- ${child.name}: ${details.join(', ')}\n`;
+        } else {
+            output += `${indent}- ${child.name}\n`;
         }
+
+        output += formatVisualBoxEvidence(
+            child.basicInfo?.styling,
+            child.basicInfo?.layout,
+            `${indent}  `
+        );
 
         if (child.children?.length && depth < maxDepth) {
             output += generateChildLayoutEvidence(
@@ -117,6 +129,7 @@ export function generateScreenAnalysisReport(
                 output += `   Parent Alignment: ${section.layout.layoutAlign}\n`;
             }
 
+            output += formatVisualBoxEvidence(section.styling, section.layout, '   ');
             output += formatCategorizedEffects(section.styling?.effects, '   ');
             
             if (section.children.length > 0) {
@@ -321,6 +334,7 @@ export function generateScreenStructureReport(node: any, showAllSections: boolea
             }
         }
 
+        output += formatFigmaNodeBoxEvidence(section, '   ');
         output += formatFigmaEffects(section.effects, '   ');
     });
 

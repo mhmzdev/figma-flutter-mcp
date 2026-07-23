@@ -90,9 +90,9 @@ export function generateComponentAnalysisReport(
     if (analysis.layout.padding) {
         const p = analysis.layout.padding;
         if (p.isUniform) {
-            output += `- Padding: ${p.top}px (uniform)\n`;
+            output += `- Padding: ${p.top}px\n`;
         } else {
-            output += `- Padding: ${p.top}px ${p.right}px ${p.bottom}px ${p.left}px\n`;
+            output += `- Padding: ${p.top}px ${p.right}px ${p.bottom}px ${p.left}px (TRBL)\n`;
         }
     }
     if (analysis.layout.sizingHorizontal) {
@@ -123,8 +123,14 @@ export function generateComponentAnalysisReport(
         output += `\n`;
     }
     if (analysis.styling.strokes && analysis.styling.strokes.length > 0) {
-        const stroke = analysis.styling.strokes[0];
-        output += `- Border: ${stroke.weight}px solid ${stroke.hex}\n`;
+        analysis.styling.strokes.forEach((stroke, index) => {
+            const label = analysis.styling.strokes!.length > 1 ? ` ${index + 1}` : '';
+            output += `- Border${label}: ${stroke.weight}px solid ${stroke.hex}`;
+            if (stroke.align) {
+                output += ` align ${stroke.align}`;
+            }
+            output += `\n`;
+        });
     }
     if (analysis.styling.cornerRadius !== undefined) {
         if (typeof analysis.styling.cornerRadius === 'number') {
@@ -163,9 +169,35 @@ export function generateComponentAnalysisReport(
             if (child.basicInfo?.layout?.layoutAlign) {
                 output += `   Parent Alignment: ${child.basicInfo.layout.layoutAlign}\n`;
             }
+            if (child.basicInfo?.layout?.padding) {
+                const p = child.basicInfo.layout.padding;
+                if (p.isUniform) {
+                    output += `   Padding: ${p.top}px\n`;
+                } else {
+                    output += `   Padding: ${p.top}px ${p.right}px ${p.bottom}px ${p.left}px (TRBL)\n`;
+                }
+            }
 
             if (child.basicInfo?.styling?.fills && child.basicInfo.styling.fills.length > 0) {
                 output += `   Background: ${child.basicInfo.styling.fills[0].hex}\n`;
+            }
+            if (child.basicInfo?.styling?.strokes && child.basicInfo.styling.strokes.length > 0) {
+                child.basicInfo.styling.strokes.forEach((stroke, strokeIndex) => {
+                    const label = child.basicInfo!.styling!.strokes!.length > 1
+                        ? ` ${strokeIndex + 1}`
+                        : '';
+                    output += `   Border${label}: ${stroke.weight}px solid ${stroke.hex}`;
+                    if (stroke.align) {
+                        output += ` align ${stroke.align}`;
+                    }
+                    output += `\n`;
+                });
+            }
+            if (child.basicInfo?.styling?.cornerRadius !== undefined) {
+                const radius = child.basicInfo.styling.cornerRadius;
+                if (typeof radius === 'number') {
+                    output += `   Corner radius: ${radius}px\n`;
+                }
             }
 
             if (child.basicInfo?.text) {

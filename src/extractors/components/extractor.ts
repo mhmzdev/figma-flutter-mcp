@@ -102,9 +102,11 @@ export function extractStylingInfo(node: FigmaNode): StylingInfo {
         styling.fills = node.fills.map(convertFillToColorInfo);
     }
 
-    // Strokes (borders)
+    // Strokes (borders) — weight/align are node-level in Figma REST
     if (node.strokes && node.strokes.length > 0) {
-        styling.strokes = node.strokes.map(convertStrokeInfo);
+        styling.strokes = node.strokes
+            .filter((stroke) => stroke.visible !== false)
+            .map((stroke) => convertStrokeInfo(stroke, node));
     }
 
     // Effects (shadows, blurs)
@@ -363,15 +365,15 @@ export function convertFillToColorInfo(fill: any): ColorInfo {
 }
 
 /**
- * Convert stroke to stroke info
+ * Convert stroke paint + node-level weight/align to stroke info.
  */
-export function convertStrokeInfo(stroke: any): StrokeInfo {
+export function convertStrokeInfo(stroke: any, node?: FigmaNode): StrokeInfo {
     return {
         type: stroke.type,
         color: stroke.color,
         hex: rgbaToHex(stroke.color),
-        weight: (stroke as any).strokeWeight || 1,
-        align: (stroke as any).strokeAlign
+        weight: node?.strokeWeight ?? stroke.strokeWeight ?? 1,
+        align: node?.strokeAlign ?? stroke.strokeAlign
     };
 }
 
@@ -461,6 +463,12 @@ export function extractBasicStyling(node: FigmaNode): Partial<StylingInfo> {
 
     if (node.fills && node.fills.length > 0) {
         styling.fills = node.fills.slice(0, 1).map(convertFillToColorInfo); // Limit to primary fill
+    }
+
+    if (node.strokes && node.strokes.length > 0) {
+        styling.strokes = node.strokes
+            .filter((stroke) => stroke.visible !== false)
+            .map((stroke) => convertStrokeInfo(stroke, node));
     }
 
     const cornerRadius = extractCornerRadius(node);
