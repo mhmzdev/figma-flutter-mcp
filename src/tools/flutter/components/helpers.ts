@@ -3,6 +3,7 @@ import type {ComponentAnalysis} from "../../../extractors/components/types.js";
 import {generateFlutterTextWidget} from "../../../extractors/components/extractor.js";
 import {generateComponentVisualContext} from "../visual-context.js";
 import {formatComponentProperties} from "../../../utils/component-properties.js";
+import {formatCategorizedEffects} from "../../../utils/effects-format.js";
 import {filterEffectivelyVisibleChildren, isEffectivelyVisible} from "../../../utils/visibility.js";
 
 /**
@@ -137,25 +138,8 @@ export function generateComponentAnalysisReport(
         output += `- Opacity: ${Math.round(analysis.styling.opacity * 100)}%\n`;
     }
 
-    // Effects (shadows, blurs)
-    if (analysis.styling.effects) {
-        const effects = analysis.styling.effects;
-        if (effects.dropShadows.length > 0) {
-            effects.dropShadows.forEach((shadow, index) => {
-                output += `- Drop shadow ${index + 1}: ${shadow.hex} offset(${shadow.offset.x}, ${shadow.offset.y}) blur ${shadow.radius}px`;
-                if (shadow.spread) {
-                    output += ` spread ${shadow.spread}px`;
-                }
-                output += `\n`;
-            });
-        }
-        if (effects.innerShadows.length > 0) {
-            output += `- Inner shadows: ${effects.innerShadows.length} effect(s)\n`;
-        }
-        if (effects.blurs.length > 0) {
-            output += `- Blur effects: ${effects.blurs.length} effect(s)\n`;
-        }
-    }
+    // Effects (shadows, blurs) — from node.effects via categorizeEffects
+    output += formatCategorizedEffects(analysis.styling.effects);
     output += `\n`;
 
     // Children information

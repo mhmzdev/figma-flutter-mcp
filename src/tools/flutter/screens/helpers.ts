@@ -4,6 +4,10 @@ import type {ScreenAnalysis, ScreenSection, NavigationElement, ScreenAssetInfo} 
 import type {ComponentChild} from "../../../extractors/components/types.js";
 import {generateScreenVisualContext} from "../visual-context.js";
 import {filterEffectivelyVisibleChildren} from "../../../utils/visibility.js";
+import {
+    formatCategorizedEffects,
+    formatFigmaEffects
+} from "../../../utils/effects-format.js";
 
 export function generateChildLayoutEvidence(
     children: ComponentChild[],
@@ -112,6 +116,8 @@ export function generateScreenAnalysisReport(
             if (section.layout.layoutAlign) {
                 output += `   Parent Alignment: ${section.layout.layoutAlign}\n`;
             }
+
+            output += formatCategorizedEffects(section.styling?.effects, '   ');
             
             if (section.children.length > 0) {
                 output += `   Contains: ${section.children.length} elements\n`;
@@ -314,6 +320,8 @@ export function generateScreenStructureReport(node: any, showAllSections: boolea
                 output += `   Background: ${hex}\n`;
             }
         }
+
+        output += formatFigmaEffects(section.effects, '   ');
     });
 
     if (hasMore) {
