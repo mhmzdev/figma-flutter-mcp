@@ -40,11 +40,22 @@ export interface ScreenLayoutInfo extends LayoutInfo {
     hasHeader?: boolean;
     hasFooter?: boolean;
     hasNavigation?: boolean;
+    safeArea?: ScreenSafeAreaInfo;
     contentArea?: {
         x: number;
         y: number;
         width: number;
         height: number;
+    };
+}
+
+/**
+ * Screen-owned runtime safe-area evidence.
+ */
+export interface ScreenSafeAreaInfo {
+    top?: {
+        required: boolean;
+        reason: 'no-app-bar';
     };
 }
 

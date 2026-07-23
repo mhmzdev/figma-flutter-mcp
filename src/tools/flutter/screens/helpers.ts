@@ -1,7 +1,50 @@
 // src/tools/flutter/screens/helpers.mts
 
 import type {ScreenAnalysis, ScreenSection, NavigationElement, ScreenAssetInfo} from "../../../extractors/screens/types.js";
+import type {ComponentChild} from "../../../extractors/components/types.js";
 import {generateScreenVisualContext} from "../visual-context.js";
+import {filterEffectivelyVisibleChildren} from "../../../utils/visibility.js";
+
+export function generateChildLayoutEvidence(
+    children: ComponentChild[],
+    indent: string = '   ',
+    depth: number = 0,
+    maxDepth: number = 2
+): string {
+    let output = '';
+
+    children.forEach(child => {
+        const layout = child.basicInfo?.layout;
+        if (layout) {
+            const details = [
+                layout.dimensions
+                    ? `${Math.round(layout.dimensions.width)}×${Math.round(layout.dimensions.height)}px`
+                    : undefined,
+                layout.sizingHorizontal
+                    ? `horizontal=${layout.sizingHorizontal}`
+                    : undefined,
+                layout.sizingVertical
+                    ? `vertical=${layout.sizingVertical}`
+                    : undefined,
+                layout.layoutAlign
+                    ? `parentAlign=${layout.layoutAlign}`
+                    : undefined
+            ].filter(Boolean);
+            output += `${indent}- ${child.name}: ${details.join(', ')}\n`;
+        }
+
+        if (child.children?.length && depth < maxDepth) {
+            output += generateChildLayoutEvidence(
+                child.children,
+                `${indent}  `,
+                depth + 1,
+                maxDepth
+            );
+        }
+    });
+
+    return output;
+}
 
 /**
  * Generate comprehensive screen analysis report
@@ -43,6 +86,10 @@ export function generateScreenAnalysisReport(
         const area = analysis.layout.contentArea;
         output += `- Content Area: ${Math.round(area.width)}×${Math.round(area.height)}px at (${Math.round(area.x)}, ${Math.round(area.y)})\n`;
     }
+    const topSafeArea = analysis.layout.safeArea?.top;
+    if (topSafeArea?.required) {
+        output += `- Top Safe Area: Required at runtime (no App Bar present)\n`;
+    }
     output += `\n`;
 
     // Screen sections
@@ -56,9 +103,19 @@ export function generateScreenAnalysisReport(
                 const dims = section.layout.dimensions;
                 output += `   Size: ${Math.round(dims.width)}×${Math.round(dims.height)}px\n`;
             }
+            if (section.layout.sizingHorizontal) {
+                output += `   Horizontal Sizing: ${section.layout.sizingHorizontal}\n`;
+            }
+            if (section.layout.sizingVertical) {
+                output += `   Vertical Sizing: ${section.layout.sizingVertical}\n`;
+            }
+            if (section.layout.layoutAlign) {
+                output += `   Parent Alignment: ${section.layout.layoutAlign}\n`;
+            }
             
             if (section.children.length > 0) {
                 output += `   Contains: ${section.children.length} elements\n`;
+                output += generateChildLayoutEvidence(section.children);
             }
             
             if (section.components.length > 0) {
@@ -67,6 +124,11 @@ export function generateScreenAnalysisReport(
         });
         output += `\n`;
     }
+
+    output += `Layout Sizing Semantics:\n`;
+    output += `- FILL / STRETCH: adapt to the parent's available space; do not hardcode the measured width. Use parent padding, stretch, or Expanded as appropriate.\n`;
+    output += `- FIXED: preserve the explicit Figma dimension.\n`;
+    output += `- HUG: size to the child content.\n\n`;
 
     // Navigation information
     if (analysis.navigation.navigationElements.length > 0) {
@@ -179,6 +241,15 @@ export function generateScreenStructureReport(node: any, showAllSections: boolea
                           Math.max(bbox.width, bbox.height) > 800 ? 'Tablet' : 'Mobile';
         output += `Device: ${screenSize} ${deviceType}\n`;
     }
+    if (node.layoutSizingHorizontal) {
+        output += `Horizontal Sizing: ${node.layoutSizingHorizontal}\n`;
+    }
+    if (node.layoutSizingVertical) {
+        output += `Vertical Sizing: ${node.layoutSizingVertical}\n`;
+    }
+    if (node.layoutAlign) {
+        output += `Parent Alignment: ${node.layoutAlign}\n`;
+    }
 
     output += `\n`;
 
@@ -187,10 +258,15 @@ export function generateScreenStructureReport(node: any, showAllSections: boolea
         return output;
     }
 
+    const sectionsSource = showAllSections
+        ? node.children
+        : filterEffectivelyVisibleChildren(node.children, false);
+    const hiddenSkipped = (node.children?.length || 0) - sectionsSource.length;
+
     output += `Screen Structure:\n`;
 
-    const sectionsToShow = showAllSections ? node.children : node.children.slice(0, 20);
-    const hasMore = node.children.length > sectionsToShow.length;
+    const sectionsToShow = showAllSections ? sectionsSource : sectionsSource.slice(0, 20);
+    const hasMore = sectionsSource.length > sectionsToShow.length;
 
     sectionsToShow.forEach((section: any, index: number) => {
         const isComponent = section.type === 'COMPONENT' || section.type === 'INSTANCE';
@@ -207,6 +283,15 @@ export function generateScreenStructureReport(node: any, showAllSections: boolea
             const bbox = section.absoluteBoundingBox;
             output += `   Size: ${Math.round(bbox.width)}×${Math.round(bbox.height)}px\n`;
             output += `   Position: (${Math.round(bbox.x)}, ${Math.round(bbox.y)})\n`;
+        }
+        if (section.layoutSizingHorizontal) {
+            output += `   Horizontal Sizing: ${section.layoutSizingHorizontal}\n`;
+        }
+        if (section.layoutSizingVertical) {
+            output += `   Vertical Sizing: ${section.layoutSizingVertical}\n`;
+        }
+        if (section.layoutAlign) {
+            output += `   Parent Alignment: ${section.layoutAlign}\n`;
         }
 
         if (section.children && section.children.length > 0) {
@@ -232,14 +317,18 @@ export function generateScreenStructureReport(node: any, showAllSections: boolea
     });
 
     if (hasMore) {
-        output += `\n... and ${node.children.length - sectionsToShow.length} more sections.\n`;
+        output += `\n... and ${sectionsSource.length - sectionsToShow.length} more sections.\n`;
         output += `Use showAllSections: true to see all sections.\n`;
+    }
+
+    if (!showAllSections && hiddenSkipped > 0) {
+        output += `\nSkipped ${hiddenSkipped} hidden / empty-slot section(s). Use showAllSections: true to include them.\n`;
     }
 
     // Analysis recommendations
     output += `\nAnalysis Recommendations:\n`;
     
-    const componentSections = node.children.filter((section: any) =>
+    const componentSections = sectionsSource.filter((section: any) =>
         section.type === 'COMPONENT' || section.type === 'INSTANCE'
     );
     if (componentSections.length > 0) {
@@ -285,7 +374,8 @@ export function generateFlutterScreenGuidance(analysis: ScreenAnalysis): string 
     guidance += `- Status bars, battery icons, wifi indicators are automatically filtered out\n`;
     guidance += `- Home indicators, notches, and device bezels are ignored during analysis\n`;
     guidance += `- Only actual app design content is analyzed for Flutter implementation\n`;
-    guidance += `- Use SafeArea widget in Flutter to handle device-specific insets\n\n`;
+    guidance += `- Safe-area insets belong to screen composition, not reusable component heights\n`;
+    guidance += `- Use Flutter SafeArea for reported screen edges; never hardcode the design inset\n\n`;
 
     // Main scaffold structure
     guidance += `Main Screen Structure:\n`;
@@ -307,32 +397,59 @@ export function generateFlutterScreenGuidance(analysis: ScreenAnalysis): string 
     }
     
     // Body structure
+    const footerSections = analysis.sections.filter(section => section.type === 'footer');
+    const bodySections = analysis.sections.filter(section => section.type !== 'footer');
+
+    // Body owns whichever edge its neighboring slot does not already absorb:
+    // top is unhandled without an AppBar, bottom is unhandled without a footer/bottomNavigationBar.
+    const needsTopSafeArea = analysis.layout.safeArea?.top?.required ?? false;
+    const needsBottomSafeArea = footerSections.length === 0;
+    const wrapBodyInSafeArea = needsTopSafeArea || needsBottomSafeArea;
+    const bodyIndent = wrapBodyInSafeArea ? '  ' : '';
+
     guidance += `  body: `;
-    
+    if (wrapBodyInSafeArea) {
+        guidance += `SafeArea(\n`;
+        if (!needsTopSafeArea) {
+            guidance += `    top: false, // the App Bar already occupies the top edge\n`;
+        }
+        if (!needsBottomSafeArea) {
+            guidance += `    bottom: false, // bottomNavigationBar already occupies the bottom edge\n`;
+        }
+        guidance += `    child: `;
+    }
+
     if (analysis.layout.scrollable) {
         guidance += `SingleChildScrollView(\n`;
-        guidance += `    child: Column(\n`;
-        guidance += `      children: [\n`;
+        guidance += `${bodyIndent}    child: Column(\n`;
+        guidance += `${bodyIndent}      children: [\n`;
     } else {
         guidance += `Column(\n`;
-        guidance += `    children: [\n`;
+        guidance += `${bodyIndent}    children: [\n`;
     }
-    
-    // Add sections
-    analysis.sections.forEach((section, index) => {
+
+    // Add non-footer sections to the body
+    bodySections.forEach(section => {
         const widgetName = toPascalCase(section.name);
-        guidance += `        ${widgetName}(), // ${section.type} section\n`;
+        guidance += `${bodyIndent}        ${widgetName}(), // ${section.type} section\n`;
     });
     
-    guidance += `      ],\n`;
-    guidance += `    ),\n`;
+    guidance += `${bodyIndent}      ],\n`;
+    guidance += `${bodyIndent}    ),\n`;
     
     if (analysis.layout.scrollable) {
+        guidance += `${bodyIndent}  ),\n`;
+    }
+
+    if (wrapBodyInSafeArea) {
         guidance += `  ),\n`;
     }
     
-    // Bottom navigation
-    if (analysis.navigation.hasTabBar) {
+    // Bottom screen section
+    if (footerSections.length > 0) {
+        const footerWidgetName = toPascalCase(footerSections[0].name);
+        guidance += `  bottomNavigationBar: ${footerWidgetName}(),\n`;
+    } else if (analysis.navigation.hasTabBar) {
         guidance += `  bottomNavigationBar: BottomNavigationBar(\n`;
         guidance += `    items: [\n`;
         

@@ -26,6 +26,18 @@ export interface ComponentMetadata {
     variantCount?: number;
     isUserDefinedComponent?: boolean; // When user treats FRAME as component
     componentKey?: string; // For actual Figma components
+    /** INSTANCE componentProperties (BOOLEAN / TEXT / INSTANCE_SWAP / VARIANT). */
+    componentProperties?: ComponentPropertyInfo[];
+}
+
+/**
+ * Figma INSTANCE component property (including BOOLEAN show/hide toggles).
+ */
+export interface ComponentPropertyInfo {
+    name: string;
+    rawKey: string;
+    type: string;
+    value: string | boolean | number;
 }
 
 /**
@@ -43,6 +55,12 @@ export interface LayoutInfo {
     };
     alignItems?: string;
     justifyContent?: string;
+    mainAxisAlignment?: string;
+    crossAxisAlignment?: string;
+    sizingHorizontal?: 'FIXED' | 'HUG' | 'FILL';
+    sizingVertical?: 'FIXED' | 'HUG' | 'FILL';
+    layoutAlign?: 'INHERIT' | 'STRETCH';
+    layoutGrow?: number;
 }
 
 /**
@@ -158,6 +176,7 @@ export interface ComponentChild {
         styling?: Partial<StylingInfo>;
         text?: TextInfo;
     };
+    children?: ComponentChild[];
 }
 
 /**

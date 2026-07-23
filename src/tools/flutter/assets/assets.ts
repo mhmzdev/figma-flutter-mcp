@@ -13,6 +13,7 @@ import {
     groupAssetsByBaseName,
     type AssetInfo
 } from "./asset-manager.js";
+import {isEffectivelyVisible} from "../../../utils/visibility.js";
 
 export function registerFlutterAssetTools(server: McpServer, figmaApiKey: string) {
     // Tool: Export Flutter Assets
@@ -52,7 +53,7 @@ export function registerFlutterAssetTools(server: McpServer, figmaApiKey: string
                     return {
                         content: [{
                             type: "text",
-                            text: "No image assets found in the specified nodes. Only custom illustrations, photos, and non-icon graphics are exported."
+                            text: "No visible image assets found in the specified nodes. Hidden nodes (visible: false) and empty icon slots are skipped. Only custom illustrations, photos, and non-icon graphics are exported."
                         }]
                     };
                 }
@@ -145,6 +146,11 @@ async function filterImageNodes(fileId: string, targetNodeIds: string[], figmaSe
     const allNodesWithImages: Array<{id: string, name: string, node: any}> = [];
 
     function extractImageNodes(node: any, nodeId: string = node.id): void {
+        // Never export explicitly hidden nodes or empty containers that only wrap hidden content
+        if (!isEffectivelyVisible(node)) {
+            return;
+        }
+
         // Check if this node has image fills
         if (node.fills && node.fills.some((fill: any) => fill.type === 'IMAGE' && fill.visible !== false)) {
             allNodesWithImages.push({
