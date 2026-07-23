@@ -59,16 +59,18 @@
 ## 📚 工作原理 | [详见此处](docs/figma-flutter-mcp.md)
 1. [组件/小部件](src/extractors/components/)
 - ✅ 提取 Figma 节点数据：布局、样式、尺寸、颜色、文本内容等
-- ✅ 分析结构：子元素、嵌套组件、视觉重要性
-- ✅ 提供指导：建议 Flutter 小部件和实现模式
-- ❌ 不会生成实际的 Flutter 代码文件
+- ✅ 分析结构：子元素、嵌套组件、变体、视觉重要性
+- ✅ 样式去重：进程内 Style Library 复用 decoration / text / padding 等样式引用
+- ✅ 提供指导：建议 Flutter 小部件和实现模式；可选输出基于缓存样式的实现片段
+- ❌ 默认不会直接写入完整 Flutter 小部件源文件（由 AI 根据分析结果落地）
 
 2. [屏幕](src/extractors/screens/)
 - ✅ 提取屏幕元数据：设备类型、方向、尺寸
 - ✅ 识别区块：页眉、页脚、导航、内容区域
 - ✅ 分析导航：标签栏、应用栏、抽屉、导航元素
 - ✅ 提供 Scaffold 指南：建议 Flutter 屏幕结构
-- ❌ 不会生成实际的 Flutter 屏幕
+- ✅ 可导出屏幕内图像资源到 Flutter 项目（`assets/` + `pubspec.yaml`）
+- ❌ 不会生成完整的 Flutter 屏幕源文件（由 AI 根据分析结果落地）
 
 本项目旨在帮助 AI 编写 Flutter 代码。因此，**更好的提示会带来更好的结果**。
 
@@ -129,7 +131,13 @@ cd figma-flutter-mcp
 npm install
 ```
 #### 2. 配置
-可以使用 `.env` 设置各类值。请查看 [.env.example](.env.example)
+可在项目根目录创建 `.env`，至少设置：
+```
+FIGMA_API_KEY=YOUR_API_KEY
+```
+也可用 CLI 参数 `--figma-api-key=YOUR_API_KEY`，或 `--env=/path/to/.env` 指定自定义环境文件。
+
+本地 stdio 调试（先 `npm run build`）可在 Cursor MCP 中配置：
 #### MacOS/Linux
 ```
 {
@@ -137,7 +145,7 @@ npm install
     "figma-flutter-mcp": {
       "command": "node",
       "args": [
-        "/Path/to/figma-flutter-mcp/dist/server.mjs",
+        "/Path/to/figma-flutter-mcp/dist/cli.js",
         "--figma-api-key=YOUR_API_KEY",
         "--stdio"
       ]
@@ -152,7 +160,7 @@ npm install
     "figma-flutter-mcp": {
       "command": "node",
       "args": [
-        "/Path/to/figma-flutter-mcp/dist/server.mjs",
+        "/Path/to/figma-flutter-mcp/dist/cli.js",
         "--figma-api-key=YOUR_API_KEY",
         "--stdio"
       ]
@@ -160,15 +168,23 @@ npm install
   }
 }
 ```
-> 注意：如果你只想在当前项目中使用以上 JSON，请将其配置在 `.cursor-mcp/config.json` 中。但请注意其中包含 API_KEY，务必将此文件加入 `.gitignore`。
+> 注意：如果你只想在当前项目中使用以上 JSON，请将其配置在 `.cursor/mcp.json` 中。但请注意其中包含 API_KEY，务必将此文件加入 `.gitignore`。
+
+本地 HTTP 调试也可使用 `npm run dev`（默认 `http://localhost:3333/mcp`），再在 MCP 客户端里以 URL 方式接入。
 
 #### 3. 构建与运行
 ```
-# 开发模式（自动重启）
+# 开发模式（HTTP，默认端口 3333）
 npm run dev
 
-# 生产模式
+# 开发模式（stdio）
+npm run dev:stdio
+
+# 生产构建
 npm run build
+
+# 运行构建产物
+npm start
 ```
 现在你可以在 MCP 设置中确认服务器是否正在运行以及工具是否可用。
 
@@ -194,6 +210,7 @@ npm run build
 ```
 "从 <figma_link> 设置 Flutter 主题，包括 Colors 和 Typography。"
 ```
+对应工具会先检查主题帧结构，再提取颜色 / 排版，并可生成如 `lib/theme/app_colors.dart` 等文件。
 
 2. **生成小部件**：最有效的方式是使用 Figma 的 COMPONENTS。例如：
 
@@ -226,10 +243,18 @@ npm run build
 - `export_flutter_assets`：与屏幕生成配合使用的单个图像资源导出工具
 - `export_svg_flutter_assets`：用于导出 SVG 资源的独立工具
 
+与主题相关：
+- `inspect_theme_frame`：检查主题颜色帧结构
+- `extract_theme_colors`：从主题帧提取颜色，并可生成 Flutter 颜色 / ThemeData 文件
+- `inspect_typography_frame`：检查排版帧结构
+- `extract_theme_typography`：从排版帧提取文字样式，并可生成 Flutter 文本样式文件
+
 与小部件相关：
-- `analyze_figma_component`：用于 Figma 的 type=COMPONENT 或由用户指定的 FRAME
+- `analyze_figma_component`：用于 Figma 的 type=COMPONENT / COMPONENT_SET，或由用户指定的 FRAME
 - `list_component_variants`：用于 Figma 的 type=COMPONENT_SET（小部件变体）
 - `inspect_component_structure`：用于查看嵌套的 COMPONENTS 或 FRAMES
+- `generate_flutter_implementation`：基于已缓存的样式库生成 Flutter 实现片段
+- `style_library_status`：查看进程内样式库状态与去重统计
 
 与屏幕相关：
 - `analyze_full_screen`：type=FRAME 的完整屏幕分析与资源导出（仅图像）
