@@ -10,7 +10,8 @@ import type {
     NavigationElement,
     ScreenAssetInfo,
     SkippedNodeInfo,
-    ScreenExtractionOptions
+    ScreenExtractionOptions,
+    ScreenSafeAreaInfo
 } from './types.js';
 import type {ComponentChild, NestedComponentInfo} from '../components/types.js';
 import {
@@ -22,6 +23,11 @@ import {
     isComponentNode
 } from '../components/extractor.js';
 import { detectSectionTypeAdvanced } from '../../tools/flutter/semantic-detection.js';
+import {Logger} from '../../utils/logger.js';
+import {
+    filterEffectivelyVisibleChildren,
+    isEffectivelyVisible
+} from '../../utils/visibility.js';
 
 /**
  * Extract screen metadata
@@ -57,6 +63,7 @@ export function extractScreenLayoutInfo(node: FigmaNode): ScreenLayoutInfo {
         hasHeader: detectHeader(node),
         hasFooter: detectFooter(node),
         hasNavigation: detectNavigation(node),
+        safeArea: detectScreenSafeArea(node),
         contentArea: calculateContentArea(node)
     };
 }
@@ -80,11 +87,11 @@ export function analyzeScreenSections(
         return {sections, components, skippedNodes};
     }
 
-    // Filter visible nodes unless includeHiddenNodes is true
-    let visibleChildren = node.children;
-    if (!options.includeHiddenNodes) {
-        visibleChildren = node.children.filter(child => child.visible !== false);
-    }
+    // Filter effectively visible nodes unless includeHiddenNodes is true
+    let visibleChildren = filterEffectivelyVisibleChildren(
+        node.children,
+        options.includeHiddenNodes
+    );
 
     // Filter out device UI elements (status bars, notches, home indicators, etc.)
     const filteredDeviceUI = visibleChildren.filter(child => isDeviceUIElement(child, node));
@@ -185,9 +192,10 @@ function createScreenSection(
 
     // Analyze section children
     if (node.children) {
-        const visibleChildren = options.includeHiddenNodes 
-            ? node.children 
-            : node.children.filter(child => child.visible !== false);
+        const visibleChildren = filterEffectivelyVisibleChildren(
+            node.children,
+            options.includeHiddenNodes
+        );
 
         visibleChildren.forEach(child => {
             const childImportance = calculateVisualImportance(child);
@@ -267,11 +275,11 @@ function detectSectionType(node: FigmaNode, parent?: FigmaNode, siblings?: Figma
         
         // Log reasoning for debugging (in development)
         if (process.env.NODE_ENV === 'development') {
-            console.debug(`Low confidence (${classification.confidence}) for section "${node.name}": ${classification.reasoning.join(', ')}`);
+            Logger.info(`Low confidence (${classification.confidence}) for section "${node.name}": ${classification.reasoning.join(', ')}`);
         }
     } catch (error) {
         // Fall back to legacy detection if advanced detection fails
-        console.warn('Advanced section detection failed, using legacy method:', error);
+        Logger.warn('Advanced section detection failed, using legacy method:', error);
     }
 
     // Legacy detection as fallback
@@ -378,6 +386,16 @@ function detectFooter(node: FigmaNode): boolean {
 }
 
 /**
+ * Detect whether the screen needs to own the runtime top safe-area inset
+ * (i.e. no App Bar is present to absorb it).
+ */
+function detectScreenSafeArea(node: FigmaNode): ScreenSafeAreaInfo | undefined {
+    if (detectAppBar(node)) return undefined;
+
+    return {top: {required: true, reason: 'no-app-bar'}};
+}
+
+/**
  * Detect navigation presence
  */
 function detectNavigation(node: FigmaNode): boolean {
@@ -464,6 +482,7 @@ function traverseAndCheck(node: FigmaNode, condition: (node: FigmaNode) => boole
  */
 function traverseForNavigation(node: FigmaNode, results: NavigationElement[], depth: number = 0): void {
     if (depth > 3) return;
+    if (!isEffectivelyVisible(node)) return;
 
     const name = node.name.toLowerCase();
     
@@ -663,6 +682,7 @@ function hasStatusBarContent(node: FigmaNode): boolean {
  */
 function traverseForAssets(node: FigmaNode, results: ScreenAssetInfo[], depth: number = 0): void {
     if (depth > 4) return;
+    if (!isEffectivelyVisible(node)) return;
 
     // Check if this node is an asset
     if (isAssetNode(node)) {

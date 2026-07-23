@@ -27,6 +27,12 @@ export interface FigmaNode {
     layoutMode?: string;
     primaryAxisSizingMode?: string;
     counterAxisSizingMode?: string;
+    layoutSizingHorizontal?: 'FIXED' | 'HUG' | 'FILL';
+    layoutSizingVertical?: 'FIXED' | 'HUG' | 'FILL';
+    layoutAlign?: 'INHERIT' | 'STRETCH';
+    primaryAxisAlignItems?: string;
+    counterAxisAlignItems?: string;
+    layoutGrow?: number;
     paddingLeft?: number;
     paddingRight?: number;
     paddingTop?: number;

@@ -2,6 +2,8 @@ import type {ComponentVariant} from "../../../extractors/components/types.js";
 import type {ComponentAnalysis} from "../../../extractors/components/types.js";
 import {generateFlutterTextWidget} from "../../../extractors/components/extractor.js";
 import {generateComponentVisualContext} from "../visual-context.js";
+import {formatComponentProperties} from "../../../utils/component-properties.js";
+import {filterEffectivelyVisibleChildren, isEffectivelyVisible} from "../../../utils/visibility.js";
 
 /**
  * Generate variant selection prompt when there are more than 3 variants
@@ -56,6 +58,7 @@ export function generateComponentAnalysisReport(
         output += `Source: ${parsedInput.source === 'url' ? 'Figma URL' : 'Direct input'}\n`;
     }
     output += `\n`;
+    output += formatComponentProperties(analysis.metadata.componentProperties);
 
     // Variant information
     if (variantAnalysis && variantAnalysis.length > 0) {
@@ -91,11 +94,20 @@ export function generateComponentAnalysisReport(
             output += `- Padding: ${p.top}px ${p.right}px ${p.bottom}px ${p.left}px\n`;
         }
     }
-    if (analysis.layout.alignItems) {
-        output += `- Align Items: ${analysis.layout.alignItems}\n`;
+    if (analysis.layout.sizingHorizontal) {
+        output += `- Horizontal Sizing: ${analysis.layout.sizingHorizontal}\n`;
     }
-    if (analysis.layout.justifyContent) {
-        output += `- Justify Content: ${analysis.layout.justifyContent}\n`;
+    if (analysis.layout.sizingVertical) {
+        output += `- Vertical Sizing: ${analysis.layout.sizingVertical}\n`;
+    }
+    if (analysis.layout.layoutAlign) {
+        output += `- Parent Alignment: ${analysis.layout.layoutAlign}\n`;
+    }
+    if (analysis.layout.mainAxisAlignment) {
+        output += `- Main Axis Alignment: ${analysis.layout.mainAxisAlignment}\n`;
+    }
+    if (analysis.layout.crossAxisAlignment) {
+        output += `- Cross Axis Alignment: ${analysis.layout.crossAxisAlignment}\n`;
     }
     output += `\n`;
 
@@ -157,6 +169,15 @@ export function generateComponentAnalysisReport(
             if (child.basicInfo?.layout?.dimensions) {
                 const dims = child.basicInfo.layout.dimensions;
                 output += `   Size: ${Math.round(dims.width)}×${Math.round(dims.height)}px\n`;
+            }
+            if (child.basicInfo?.layout?.sizingHorizontal) {
+                output += `   Horizontal Sizing: ${child.basicInfo.layout.sizingHorizontal}\n`;
+            }
+            if (child.basicInfo?.layout?.sizingVertical) {
+                output += `   Vertical Sizing: ${child.basicInfo.layout.sizingVertical}\n`;
+            }
+            if (child.basicInfo?.layout?.layoutAlign) {
+                output += `   Parent Alignment: ${child.basicInfo.layout.layoutAlign}\n`;
             }
 
             if (child.basicInfo?.styling?.fills && child.basicInfo.styling.fills.length > 0) {
@@ -250,11 +271,15 @@ export function generateFlutterGuidance(analysis: ComponentAnalysis): string {
             guidance += `- Add spacing with SizedBox(${spacingWidget}: ${analysis.layout.spacing})\n`;
         }
 
-        if (analysis.layout.alignItems) {
-            guidance += `- CrossAxisAlignment: ${mapFigmaToFlutterAlignment(analysis.layout.alignItems)}\n`;
+        const crossAxisAlignment =
+            analysis.layout.crossAxisAlignment ?? analysis.layout.justifyContent;
+        if (crossAxisAlignment) {
+            guidance += `- CrossAxisAlignment: ${mapFigmaToFlutterAlignment(crossAxisAlignment)}\n`;
         }
-        if (analysis.layout.justifyContent) {
-            guidance += `- MainAxisAlignment: ${mapFigmaToFlutterAlignment(analysis.layout.justifyContent)}\n`;
+        const mainAxisAlignment =
+            analysis.layout.mainAxisAlignment ?? analysis.layout.alignItems;
+        if (mainAxisAlignment) {
+            guidance += `- MainAxisAlignment: ${mapFigmaToFlutterAlignment(mainAxisAlignment)}\n`;
         }
     } else {
         guidance += `- Use Container() or Stack() for layout\n`;
@@ -378,6 +403,15 @@ export function generateStructureInspectionReport(node: any, showAllChildren: bo
         const bbox = node.absoluteBoundingBox;
         output += `Dimensions: ${Math.round(bbox.width)}×${Math.round(bbox.height)}px\n`;
     }
+    if (node.layoutSizingHorizontal) {
+        output += `Horizontal Sizing: ${node.layoutSizingHorizontal}\n`;
+    }
+    if (node.layoutSizingVertical) {
+        output += `Vertical Sizing: ${node.layoutSizingVertical}\n`;
+    }
+    if (node.layoutAlign) {
+        output += `Parent Alignment: ${node.layoutAlign}\n`;
+    }
 
     output += `\n`;
 
@@ -386,21 +420,39 @@ export function generateStructureInspectionReport(node: any, showAllChildren: bo
         return output;
     }
 
+    const childrenSource = showAllChildren
+        ? node.children
+        : filterEffectivelyVisibleChildren(node.children, false);
+    const hiddenSkipped = (node.children?.length || 0) - childrenSource.length;
+
     output += `Child Structure:\n`;
 
-    const childrenToShow = showAllChildren ? node.children : node.children.slice(0, 15);
-    const hasMore = node.children.length > childrenToShow.length;
+    const childrenToShow = showAllChildren ? childrenSource : childrenSource.slice(0, 15);
+    const hasMore = childrenSource.length > childrenToShow.length;
 
     childrenToShow.forEach((child: any, index: number) => {
         const isComponent = child.type === 'COMPONENT' || child.type === 'INSTANCE';
         const componentMark = isComponent ? ' [COMPONENT]' : '';
         const hiddenMark = child.visible === false ? ' [HIDDEN]' : '';
+        const emptySlotMark =
+            child.visible !== false && !isEffectivelyVisible(child)
+                ? ' [EMPTY_HIDDEN_SLOT]'
+                : '';
 
-        output += `${index + 1}. ${child.name} (${child.type})${componentMark}${hiddenMark}\n`;
+        output += `${index + 1}. ${child.name} (${child.type})${componentMark}${hiddenMark}${emptySlotMark}\n`;
 
         if (child.absoluteBoundingBox) {
             const bbox = child.absoluteBoundingBox;
             output += `   Size: ${Math.round(bbox.width)}×${Math.round(bbox.height)}px\n`;
+        }
+        if (child.layoutSizingHorizontal) {
+            output += `   Horizontal Sizing: ${child.layoutSizingHorizontal}\n`;
+        }
+        if (child.layoutSizingVertical) {
+            output += `   Vertical Sizing: ${child.layoutSizingVertical}\n`;
+        }
+        if (child.layoutAlign) {
+            output += `   Parent Alignment: ${child.layoutAlign}\n`;
         }
 
         if (child.children && child.children.length > 0) {
@@ -418,13 +470,17 @@ export function generateStructureInspectionReport(node: any, showAllChildren: bo
     });
 
     if (hasMore) {
-        output += `\n... and ${node.children.length - childrenToShow.length} more children.\n`;
+        output += `\n... and ${childrenSource.length - childrenToShow.length} more children.\n`;
         output += `Use showAllChildren: true to see all children.\n`;
+    }
+
+    if (!showAllChildren && hiddenSkipped > 0) {
+        output += `\nSkipped ${hiddenSkipped} hidden / empty-slot child(ren). Use showAllChildren: true to include them.\n`;
     }
 
     // Analysis recommendations
     output += `\nAnalysis Recommendations:\n`;
-    const componentChildren = node.children.filter((child: any) =>
+    const componentChildren = childrenSource.filter((child: any) =>
         child.type === 'COMPONENT' || child.type === 'INSTANCE'
     );
 
@@ -432,7 +488,7 @@ export function generateStructureInspectionReport(node: any, showAllChildren: bo
         output += `- Found ${componentChildren.length} nested components for separate analysis\n`;
     }
 
-    const largeChildren = node.children.filter((child: any) => {
+    const largeChildren = childrenSource.filter((child: any) => {
         const bbox = child.absoluteBoundingBox;
         return bbox && (bbox.width * bbox.height) > 5000;
     });

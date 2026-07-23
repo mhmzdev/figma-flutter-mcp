@@ -17,6 +17,9 @@ import type {
     ComponentExtractionOptions
 } from './types.js';
 import { detectSemanticTypeAdvanced, generateSemanticContext } from '../../tools/flutter/semantic-detection.js';
+import {Logger} from '../../utils/logger.js';
+import {filterEffectivelyVisibleChildren} from '../../utils/visibility.js';
+import {extractComponentProperties} from '../../utils/component-properties.js';
 
 /**
  * Extract component metadata
@@ -38,6 +41,12 @@ export function extractMetadata(node: FigmaNode, userDefinedAsComponent: boolean
         metadata.variantCount = node.children?.length || 0;
     }
 
+    // INSTANCE (and some COMPONENT) componentProperties including BOOLEAN toggles
+    const componentProperties = extractComponentProperties(node);
+    if (componentProperties.length > 0) {
+        metadata.componentProperties = componentProperties;
+    }
+
     return metadata;
 }
 
@@ -50,7 +59,11 @@ export function extractLayoutInfo(node: FigmaNode): LayoutInfo {
         dimensions: {
             width: node.absoluteBoundingBox?.width || 0,
             height: node.absoluteBoundingBox?.height || 0
-        }
+        },
+        sizingHorizontal: node.layoutSizingHorizontal,
+        sizingVertical: node.layoutSizingVertical,
+        layoutAlign: node.layoutAlign,
+        layoutGrow: node.layoutGrow
     };
 
     // Auto-layout specific properties
@@ -66,6 +79,8 @@ export function extractLayoutInfo(node: FigmaNode): LayoutInfo {
         // Alignment properties
         layout.alignItems = (node as any).primaryAxisAlignItems;
         layout.justifyContent = (node as any).counterAxisAlignItems;
+        layout.mainAxisAlignment = node.primaryAxisAlignItems;
+        layout.crossAxisAlignment = node.counterAxisAlignItems;
     }
 
     // Constraints
@@ -130,11 +145,12 @@ export function analyzeChildren(
         return {children, nestedComponents, skippedNodes};
     }
 
-    // Filter visible nodes unless includeHiddenNodes is true
-    let visibleChildren = node.children;
-    if (!options.includeHiddenNodes) {
-        visibleChildren = node.children.filter(child => child.visible !== false);
-    }
+    // Filter effectively visible nodes unless includeHiddenNodes is true.
+    // Also drops empty frames whose only children are hidden (e.g. App Bar icon slots).
+    let visibleChildren = filterEffectivelyVisibleChildren(
+        node.children,
+        options.includeHiddenNodes
+    );
 
     // Calculate visual importance for all children
     const childrenWithImportance = visibleChildren.map(child => ({
@@ -205,27 +221,47 @@ export function createComponentChild(
     isNestedComponent: boolean,
     options: Required<ComponentExtractionOptions>,
     parent?: FigmaNode,
-    siblings?: FigmaNode[]
+    siblings?: FigmaNode[],
+    depth: number = 0
 ): ComponentChild {
+    const basicInfo: NonNullable<ComponentChild['basicInfo']> = {
+        layout: extractBasicLayout(node)
+    };
     const child: ComponentChild = {
         nodeId: node.id,
         name: node.name,
         type: node.type,
         isNestedComponent,
-        visualImportance: importance
+        visualImportance: importance,
+        basicInfo
     };
 
     // Extract basic info for non-component children
     if (!isNestedComponent) {
-        child.basicInfo = {
-            layout: extractBasicLayout(node),
-            styling: extractBasicStyling(node)
-        };
+        basicInfo.styling = extractBasicStyling(node);
 
         // Extract text info for text nodes
         if (node.type === 'TEXT' && options.extractTextContent) {
-            child.basicInfo.text = extractTextInfo(node, parent, siblings);
+            basicInfo.text = extractTextInfo(node, parent, siblings);
         }
+    }
+
+    if (node.children && depth < options.maxDepth) {
+        const visibleChildren = filterEffectivelyVisibleChildren(
+            node.children,
+            options.includeHiddenNodes
+        );
+        child.children = visibleChildren
+            .slice(0, options.maxChildNodes)
+            .map(nestedChild => createComponentChild(
+                nestedChild,
+                calculateVisualImportance(nestedChild),
+                isComponentNode(nestedChild),
+                options,
+                node,
+                visibleChildren.filter(sibling => sibling.id !== nestedChild.id),
+                depth + 1
+            ));
     }
 
     return child;
@@ -414,13 +450,7 @@ export function extractCornerRadius(node: FigmaNode): number | CornerRadii | und
  * Extract basic layout info for non-component children
  */
 export function extractBasicLayout(node: FigmaNode): Partial<LayoutInfo> {
-    return {
-        type: determineLayoutType(node),
-        dimensions: {
-            width: node.absoluteBoundingBox?.width || 0,
-            height: node.absoluteBoundingBox?.height || 0
-        }
-    };
+    return extractLayoutInfo(node);
 }
 
 /**
@@ -702,11 +732,11 @@ function detectSemanticType(
             
             // Log reasoning for debugging (in development)
             if (process.env.NODE_ENV === 'development') {
-                console.debug(`Low confidence (${classification.confidence}) for "${content}": ${classification.reasoning.join(', ')}`);
+                Logger.info(`Low confidence (${classification.confidence}) for "${content}": ${classification.reasoning.join(', ')}`);
             }
         } catch (error) {
             // Fall back to legacy detection if advanced detection fails
-            console.warn('Advanced semantic detection failed, using legacy method:', error);
+            Logger.warn('Advanced semantic detection failed, using legacy method:', error);
         }
     }
 
