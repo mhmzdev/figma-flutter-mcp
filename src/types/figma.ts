@@ -27,11 +27,23 @@ export interface FigmaNode {
     layoutMode?: string;
     primaryAxisSizingMode?: string;
     counterAxisSizingMode?: string;
+    layoutSizingHorizontal?: 'FIXED' | 'HUG' | 'FILL';
+    layoutSizingVertical?: 'FIXED' | 'HUG' | 'FILL';
+    layoutAlign?: 'INHERIT' | 'STRETCH';
+    primaryAxisAlignItems?: string;
+    counterAxisAlignItems?: string;
+    layoutGrow?: number;
     paddingLeft?: number;
     paddingRight?: number;
     paddingTop?: number;
     paddingBottom?: number;
     itemSpacing?: number;
+    /** Stroke weight lives on the node in Figma REST, not on each stroke paint. */
+    strokeWeight?: number;
+    /** Stroke alignment on the node: INSIDE | OUTSIDE | CENTER */
+    strokeAlign?: string;
+    cornerRadius?: number;
+    rectangleCornerRadii?: number[];
     // Text-specific properties
     characters?: string; // Actual text content for TEXT nodes
     characterStyleOverrides?: number[];
